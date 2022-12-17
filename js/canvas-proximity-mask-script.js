@@ -185,7 +185,7 @@ function init() {
     image.onload = function () {
       imageLoaded = true;
     };
-    image.src = "https://assets.codepen.io/128966/img_repulsion.jpg";
+    image.src = "https://donuchew.github.io/img/Tapestrydonutgod.png";
   }
 
   animate();
