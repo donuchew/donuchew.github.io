@@ -72,7 +72,7 @@ class Stamp {
 function init() {
   new Stamp("circle-content");
   const stats = new Stats();
-  stats.showPanel(0);
+  //stats.showPanel(0);
 
   //buildGUI();
   let imageLoaded = false;
