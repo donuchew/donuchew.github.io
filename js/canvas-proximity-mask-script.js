@@ -185,7 +185,7 @@ function init() {
     image.onload = function () {
       imageLoaded = true;
     };
-    image.src = "https://donuchew.github.io/img/34FE5DB8-3600-47BC-BFAE-B8AF22F5BFCC.jpeg";
+    image.src = "https://donuchew.github.io/img/F9AAE552-CBC5-493B-A0F5-4CC1F51D4DD6.png";
   }
 
   animate();
