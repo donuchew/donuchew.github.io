@@ -185,7 +185,7 @@ function init() {
     image.onload = function () {
       imageLoaded = true;
     };
-    image.src = "https://donuchew.github.io/img/Tapestrydonutgod.png";
+    image.src = "https://donuchew.github.io/img/stainedglassdonuts.png";
   }
 
   animate();
