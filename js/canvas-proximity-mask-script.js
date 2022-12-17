@@ -74,7 +74,7 @@ function init() {
   const stats = new Stats();
   stats.showPanel(0);
 
-  buildGUI();
+  //buildGUI();
   let imageLoaded = false;
   const canvas = document.getElementById("c");
   const image = new Image();
