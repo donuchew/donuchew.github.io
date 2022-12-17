@@ -1,8 +1,8 @@
 let parameters = {
-  size: 30,
+  size: 20,
   radius: 1,
-  proximity: 125,
-  growth: 60,
+  proximity: 70,
+  growth: 95,
   ease: 0.075,
   stats: false };
 
