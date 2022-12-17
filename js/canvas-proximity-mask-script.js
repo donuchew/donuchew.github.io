@@ -185,7 +185,7 @@ function init() {
     image.onload = function () {
       imageLoaded = true;
     };
-    image.src = "https://donuchew.github.io/img/stainedglassdonuts.png";
+    image.src = "https://donuchew.github.io/img/34FE5DB8-3600-47BC-BFAE-B8AF22F5BFCC.jpeg";
   }
 
   animate();
