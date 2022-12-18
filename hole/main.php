@@ -8,12 +8,10 @@
          
  
 	</head>
-	<body> 
-<!--#Include Virtual = "/hole/header.asp"--> 
-
-<!--#Include Virtual = "/hole/mainContents.asp"-->
- 
-<!--#Include Virtual = "/hole/footer.asp"-->
+	<body>  
+		<?php include 'header.php'; ?>
+		<?php include 'mainContents.php'; ?>
+		<?php include 'footer.php'; ?> 
 
 	</body>
 </html>
