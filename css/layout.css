@@ -1,3 +1,136 @@
-.page-centent{}
+* {
+  box-sizing: border-box;
+  margin: 0; padding: 0;
+} 
 
-.mainContainer{}
+/*donut*/
+body {
+  background: #1D1E22;
+  color: rgb(0 255 0);
+  display: flex;
+  align-items: center;
+  flex-direction: column;
+  font-family: monospace;
+}
+
+pre{ 
+	//letter-spacing:10px;
+	//line-height:2;
+	font-size:1.3vh;
+	font-weight:bold;
+	height:auto;
+	margin: 25vh 0 2vh;
+	//font-stretch: expanded;
+
+}
+
+
+.btn-holder {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  max-width: 1000px;
+  margin: 20px auto 35px;
+}
+.btn {
+  position: relative;
+  display: inline-block;
+  width: auto; height: auto;
+  background-color: transparent;
+  border: none;
+  cursor: pointer;
+  margin: 0px 25px 15px;
+  min-width: 150px;
+}
+.btn span {         
+position: relative;
+display: inline-block;
+font-size: 34px;  
+text-transform: uppercase;
+top: 0; left: 0;
+width: 100%; 
+transition: 0.3s;
+}
+ 
+/*--- btn-4 ---*/
+.btn-4 span {
+  color: rgb(0, 255, 0);
+  /*background-color: rgb(245,245,245);*/
+}
+.btn-4 span:hover { 
+  outline: 0!important;
+  outline-offset: 0;
+}
+.btn-4::before,
+.btn-4::after {
+  width: 15%; height: 2px;
+  background-color: rgb(0, 255, 0);
+  z-index: 2;
+}
+ 
+/* 18. hover-border-8 */
+.btn.hover-border-8::before,
+.btn.hover-border-8::after {
+  bottom: 0;
+  width: 15%;
+  transition: width 0.2s 0.35s ease-out;
+  
+  position: absolute;
+  content: "";
+}
+.btn.hover-border-8::before {
+  right: 50%;
+}
+.btn.hover-border-8::after {
+  left: 50%;
+}
+.btn.hover-border-8:hover::before {
+  width: 50%;
+  transition: width 0.2s ease-in;   
+}
+.btn.hover-border-8:hover::after {
+  width: 50%;
+  transition: width 0.1s ease-in;   
+}
+
+.btn.hover-border-8 span::before,
+.btn.hover-border-8 span::after {
+  width: 0%; height: 0%;
+  bottom: 0;
+  background: transparent;
+  opacity: 0;
+  z-index: 2;
+  
+  position: absolute;
+  content: "";
+}
+.btn.hover-border-8 span::before {
+  left: 0%;
+  border-left: 2px solid  #00ff00;
+  transition: height 0.25s ease-in, opacity 0s 0.35s;   
+}
+.btn.hover-border-8 span:hover::before {
+  height: 96%;
+  opacity: 1;
+  transition: height 0.25s 0.2s ease-out, opacity 0s 0.2s;  
+  
+outline: 0!important;
+  outline-offset: 0;  
+}
+.btn.hover-border-8 span::after {
+  right: 0%;
+  border-right: 2px solid #00ff00;
+  border-top: 2px solid #00ff00;
+  transition: width 0.2s ease-in, height 0.15s 0.2s linear, opacity 0s 0.35s;   
+}
+.btn.hover-border-8 span:hover::after {
+  width: 99%; height: 96%;
+  opacity: 1;
+  transition: height 0.15s 0.1s linear, width 0.2s 0.25s linear, opacity 0s 0.1s;   
+  
+  outline: 0!important;
+  outline-offset: 0;
+}
+
+.join span {font-family: 'Pixelade', cursive;}
+ 
