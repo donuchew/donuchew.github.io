@@ -1,0 +1,34 @@
+body {
+    height: 300vh; /* 충분한 높이를 갖는 페이지 */
+    margin: 0;
+    overflow: hidden;
+}
+
+.frame {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100vh;
+    transition: opacity 0.5s, transform 0.5s;
+    opacity: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2em;
+}
+
+#frame1 {
+    background-color: #FF5733;
+    transform: translateX(0);
+}
+
+#frame2 {
+    background-color: #3498DB;
+    transform: translateX(100%);
+}
+
+#frame3 {
+    background-color: #27AE60;
+    transform: translateX(200%);
+}
