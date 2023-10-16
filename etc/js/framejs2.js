@@ -7,7 +7,7 @@ function smoothScroll(target) {
     const targetPosition = target * window.innerHeight;
     const startPosition = container.scrollTop;
     const distance = targetPosition - startPosition;
-    const duration = 1000; // 원하는 속도와 맞게 조절
+    const duration = 10; // 원하는 속도와 맞게 조절
 
     let startTime = null;
 
