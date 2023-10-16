@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>GIF 스크롤 애니메이션</title>
+    <style>
+        body {
+            height: 200vh; /* 페이지의 높이를 조절 */
+            overflow: hidden;
+            margin: 0;
+        }
+
+        .gif-container {
+            height: 100vh; /* GIF 높이를 조절 */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="gif-container" id="gifContainer">
+        <img src="your-gif-file.gif" alt="GIF 이미지">
+    </div>
+
+    <script>
+        let ticking = false;
+
+        const gifContainer = document.getElementById('gifContainer');
+        const gif = gifContainer.querySelector('img');
+
+        function scrollHandler() {
+            if (!ticking) {
+                window.requestAnimationFrame(function () {
+                    gif.style.transform = `translateY(-${window.scrollY * 0.5}px)`;
+                    ticking = false;
+                });
+                ticking = true;
+            }
+        }
+
+        window.addEventListener('scroll', scrollHandler);
+    </script>
+</body>
+</html>
