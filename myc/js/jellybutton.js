@@ -22,8 +22,8 @@
 	});*/
 
 	//재조합
-	const likebutton = document.querySelector("#likebutton");
-	const hatebutton = document.querySelector("#hatebutton");
+	const likebutton = document.querySelector(".like");
+	const hatebutton = document.querySelector(".hate");
 	const isAnimationOk = window.matchMedia('(prefers-reduced-motion: no-preference)').matches;
 	const buttonT1 = gsap.timeline();
 	const buttonT2 = gsap.timeline();
