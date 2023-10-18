@@ -1,5 +1,5 @@
 (function(){
-	const button = document.querySelector(".button");
+	/*const button = document.querySelector(".button");
 	const isAnimationOk = window.matchMedia('(prefers-reduced-motion: no-preference)').matches;
 	const buttonTl = gsap.timeline();
 	gsap.set(button, {
@@ -19,7 +19,7 @@
 
 	button.addEventListener("click", function (e) {
 		buttonTl.play(0.3);
-	});
+	});*/
 
 	//재조합
 	const likebutton = document.querySelector("#likebutton");
