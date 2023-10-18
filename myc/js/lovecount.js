@@ -20,5 +20,5 @@ dislikeButton.addEventListener('click', function () {
 
 // 호감도 업데이트 함수
 function updateResult() {
-    resultDiv.textContent = `호감도: ${likeCount}`;
+    resultDiv.textContent = `SCORE: ${likeCount}`;
 }
