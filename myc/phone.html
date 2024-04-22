@@ -65,13 +65,12 @@
             canvas.height = window.innerHeight;
 
             const NUM_OF_DROPS = 30;
-            const dropSpeed = 2;
             let drops = [];
 
             function createDrops() {
                 for (let i = 0; i < NUM_OF_DROPS; i++) {
                     const character = Math.random() < 0.9 ? Math.floor(Math.random() * 10).toString() : '-';
-                    const speed = Math.random() * 3 + 1; // 1에서 4 사이의 랜덤 속도
+                    const speed = Math.random() * 3 + 1; // Random speed between 1 and 4
 
                     drops.push({
                         x: Math.random() * canvas.width,
@@ -87,26 +86,26 @@
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
 
                 ctx.fillStyle = 'white';
-                ctx.font = '20px Arial'; // 숫자 폰트 크기 변경
+                ctx.font = '20px Arial';
                 ctx.textBaseline = 'middle';
 
                 drops.forEach((drop) => {
-                    if (drop.visible) {
-                        const textWidth = ctx.measureText(drop.number).width;
+                    if (drop.visible && drop.character !== undefined) { // Check if character is defined
+                        const textWidth = ctx.measureText(drop.character).width;
                         const textHeight = parseInt(ctx.font);
 
-                        const dropLeft = drop.x - textWidth / 2; // 텍스트 가운데 정렬
-                        const dropTop = drop.y - textHeight / 2; // 텍스트 가운데 정렬
+                        const dropLeft = drop.x - textWidth / 2;
+                        const dropTop = drop.y - textHeight / 2;
 
                         // Draw red circle (filled) for each drop
                         ctx.beginPath();
-                        ctx.arc(drop.x, drop.y, 25, 0, Math.PI * 2); // 동그란 모양 그리기
+                        ctx.arc(drop.x, drop.y, 25, 0, Math.PI * 2);
                         ctx.fillStyle = 'red';
                         ctx.fill();
 
-                        // Draw the number in white inside the circle
+                        // Draw the character in white inside the circle
                         ctx.fillStyle = 'white';
-                        ctx.fillText(drop.number, dropLeft, dropTop);
+                        ctx.fillText(drop.character, dropLeft, dropTop);
                     }
 
                     drop.y += drop.speed;
@@ -115,8 +114,9 @@
                     if (drop.y > canvas.height) {
                         drop.x = Math.random() * canvas.width;
                         drop.y = -20;
-                        drop.number = Math.floor(Math.random() * 10).toString();
+                        drop.character = Math.random() < 0.9 ? Math.floor(Math.random() * 10).toString() : '-';
                         drop.visible = true;
+                        drop.speed = Math.random() * 3 + 1; // Random speed between 1 and 4
                     }
                 });
 
@@ -128,28 +128,24 @@
                 const mouseY = event.clientY;
 
                 drops.forEach((drop) => {
-                    const textWidth = ctx.measureText(drop.number).width;
+                    const textWidth = ctx.measureText(drop.character).width;
                     const textHeight = parseInt(ctx.font);
-                    const dropLeft = drop.x - textWidth / 2; // 텍스트 가운데 정렬
-                    const dropRight = drop.x + textWidth / 2;
-                    const dropTop = drop.y - textHeight / 2; // 텍스트 가운데 정렬
-                    const dropBottom = drop.y + textHeight / 2;
+                    const dropLeft = drop.x - textWidth / 2;
+                    const dropTop = drop.y - textHeight / 2;
 
-                    // Check if click position is within the bounding circle of the drop and it has a number
                     const dx = mouseX - drop.x;
                     const dy = mouseY - drop.y;
                     const distance = Math.sqrt(dx * dx + dy * dy);
 
-                    if (distance <= 25 && drop.visible && (drop.character !== '' && drop.character !== undefined)) { // 클릭 영역 조정
-                        if (inputText.value.length < 13) {
-                            inputText.value += drop.number; // Add the number to input text
-                            drop.visible = false; // Hide the drop
+                    if (distance <= 25 && drop.visible && drop.character !== undefined) {
+                        if (inputText.value.length < 11) {
+                            inputText.value += drop.character;
+                            drop.visible = false;
                         }
-                        if (inputText.value.length === 13) {
-                            // Show result in confirm dialog when 13 digits are entered
-                            const resetInput = confirm(`입력된 13자리 숫자: ${inputText.value}\n다시 입력하시겠습니까?`);
+                        if (inputText.value.length === 11) {
+                            const resetInput = confirm(`입력된 11자리 숫자: ${inputText.value}\n다시 입력하시겠습니까?`);
                             if (resetInput) {
-                                inputText.value = ''; // Reset input text
+                                inputText.value = '';
                             }
                         }
                     }
