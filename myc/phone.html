@@ -77,7 +77,7 @@
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
 
                 ctx.fillStyle = 'white';
-                ctx.font = '20px Arial';
+                ctx.font = '30px Arial';
 
                 drops.forEach((drop) => {
                     ctx.fillText(drop.number, drop.x, drop.y);
@@ -99,8 +99,13 @@
                 const mouseY = event.clientY;
 
                 drops.forEach((drop) => {
-                    if (mouseX >= drop.x && mouseX <= drop.x + 20 && mouseY >= drop.y && mouseY <= drop.y + 20) {
-                        inputText.value += drop.number; // 입력 창에 숫자 추가
+                    // Check if click position is within the bounding box of the drop
+                    const textWidth = ctx.measureText(drop.number).width;
+                    const textHeight = parseInt(ctx.font);
+
+                    if (mouseX >= drop.x && mouseX <= drop.x + textWidth &&
+                        mouseY >= drop.y - textHeight && mouseY <= drop.y) {
+                        inputText.value += drop.number; // Add the number to input text
                     }
                 });
             });
