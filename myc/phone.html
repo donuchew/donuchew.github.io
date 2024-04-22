@@ -12,7 +12,7 @@
             justify-content: center;
             align-items: center;
             font-family: Arial, sans-serif;
-            background-color: black; /* 전체 배경을 검은색으로 설정 */
+            background-color: black;
         }
 
         .container {
@@ -38,7 +38,7 @@
 
             // Set canvas size
             canvas.width = 400;
-            canvas.height = 200;
+            canvas.height = 80; // 캔버스 높이를 80으로 조정하여 숫자 공이 더 크게 보이도록 함
 
             // Array to store clicked numbers
             let clickedNumbers = [];
@@ -52,11 +52,11 @@
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
 
                 // Draw falling numbers
-                ctx.fillStyle = 'white'; // 숫자는 흰색으로 설정
-                ctx.font = '20px Arial';
+                ctx.fillStyle = 'white';
+                ctx.font = '30px Arial'; // 숫자 크기를 30px로 키움
 
                 for (let i = 0; i < clickedNumbers.length; i++) {
-                    ctx.fillText(clickedNumbers[i], 30 + i * 25, 50);
+                    ctx.fillText(clickedNumbers[i], 30 + i * 35, 50); // 숫자 간격을 넓혀서 보기 좋게 조정
                 }
             }
 
@@ -67,7 +67,7 @@
                 const mouseY = event.clientY - rect.top;
 
                 // Check if click is within the number area
-                if (mouseY >= 30 && mouseY <= 50) {
+                if (mouseY >= 30 && mouseY <= 60) {
                     const newNumber = generateRandomNumber();
                     clickedNumbers.push(newNumber.toString());
 
