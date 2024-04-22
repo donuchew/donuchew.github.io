@@ -48,7 +48,7 @@
     </div>
 
     <div class="phonenumresult">
-        <p>숫자를 클릭하여 아래 입력 창에 추가하세요! (11자리까지 입력 가능)</p>
+        <p>Enter Phone Number(000-0000-0000)</p>
         <div class="inputContainer">
             <input type="text" id="inputText" readonly>
         </div>
@@ -85,6 +85,7 @@
 
                 ctx.fillStyle = 'white';
                 ctx.font = '20px Arial'; // 숫자 폰트 크기 변경
+                ctx.textBaseline = 'middle';
 
                 drops.forEach((drop) => {
                     if (drop.visible) {
@@ -137,13 +138,13 @@
                     const distance = Math.sqrt(dx * dx + dy * dy);
 
                     if (distance <= 25 && drop.visible && drop.number !== '') { // 클릭 영역 조정
-                        if (inputText.value.length < 11) {
+                        if (inputText.value.length < 13) {
                             inputText.value += drop.number; // Add the number to input text
                             drop.visible = false; // Hide the drop
                         }
-                        if (inputText.value.length === 11) {
-                            // Show result in confirm dialog when 11 digits are entered
-                            const resetInput = confirm(`입력된 11자리 숫자: ${inputText.value}\n다시 입력하시겠습니까?`);
+                        if (inputText.value.length === 13) {
+                            // Show result in confirm dialog when 13 digits are entered
+                            const resetInput = confirm(`입력된 13자리 숫자: ${inputText.value}\n다시 입력하시겠습니까?`);
                             if (resetInput) {
                                 inputText.value = ''; // Reset input text
                             }
