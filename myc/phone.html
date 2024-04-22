@@ -5,53 +5,52 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Raining Numbers</title>
     <style>
-        body, html {
-            height: 100%;
+        body {
             margin: 0;
+            height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
-            font-family: Arial, sans-serif;
             background-color: black;
+            color: white;
+            font-family: Arial, sans-serif;
         }
 
-        .container {
+        .phonenumresult {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
             text-align: center;
-            position: relative;
         }
 
-        canvas {
-            border: 1px solid black;
-            cursor: default;
-        }
-
-        #inputContainer {
+        .inputContainer {
             margin-top: 20px;
         }
 
-        #inputText {
+        input {
             width: 300px;
             height: 30px;
             font-size: 16px;
             text-align: center;
         }
-        .phonenumresult{
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
+
+        canvas {
+            border: 1px solid white;
+            cursor: default;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <canvas id="canvas"></canvas>
-        <div class="phonenumresult">
-            <p style="color: white;">catch phone number</p>
-            <div id="inputContainer">
-                <input type="text" id="inputText" readonly>
-            </div> 
-        </div> 
+    </div>
+
+    <div class="phonenumresult">
+        <p>숫자를 클릭하여 아래 입력 창에 추가하세요! (11자리까지 입력 가능)</p>
+        <div class="inputContainer">
+            <input type="text" id="inputText" readonly>
+        </div>
     </div>
 
     <script>
@@ -62,7 +61,7 @@
 
             // Set canvas size
             canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight - 100;
+            canvas.height = window.innerHeight;
 
             const NUM_OF_DROPS = 30;
             const dropSpeed = 2;
@@ -74,7 +73,8 @@
                         x: Math.random() * canvas.width,
                         y: Math.random() * canvas.height,
                         speed: dropSpeed,
-                        number: Math.floor(Math.random() * 10).toString()
+                        number: Math.floor(Math.random() * 10).toString(),
+                        visible: true
                     });
                 }
             }
@@ -90,7 +90,7 @@
                         ctx.fillText(drop.number, drop.x, drop.y);
                     }
 
-                    // Draw red border around the drop's rectangle area
+                    // Draw red border around the drop's rectangle area only if it has a number
                     const textWidth = ctx.measureText(drop.number).width;
                     const textHeight = parseInt(ctx.font);
                     const dropLeft = drop.x;
@@ -98,9 +98,11 @@
                     const dropTop = drop.y - textHeight;
                     const dropBottom = drop.y;
 
-                    ctx.strokeStyle = 'red';
-                    ctx.lineWidth = 2;
-                    ctx.strokeRect(dropLeft, dropTop, textWidth, textHeight);
+                    if (drop.number !== '') {
+                        ctx.strokeStyle = 'red';
+                        ctx.lineWidth = 2;
+                        ctx.strokeRect(dropLeft, dropTop, textWidth, textHeight);
+                    }
 
                     drop.y += drop.speed;
 
@@ -128,11 +130,17 @@
                     const dropTop = drop.y - textHeight;
                     const dropBottom = drop.y;
 
-                    // Check if click position is within the bounding box of the drop
+                    // Check if click position is within the bounding box of the drop and it has a number
                     if (mouseX >= dropLeft && mouseX <= dropRight &&
-                        mouseY >= dropTop && mouseY <= dropBottom && drop.visible) {
-                        inputText.value += drop.number; // Add the number to input text
-                        drop.visible = false; // Hide the drop
+                        mouseY >= dropTop && mouseY <= dropBottom && drop.visible && drop.number !== '') {
+                        if (inputText.value.length < 11) {
+                            inputText.value += drop.number; // Add the number to input text
+                            drop.visible = false; // Hide the drop
+                        }
+                        if (inputText.value.length === 11) {
+                            // Show result in alert when 11 digits are entered
+                            alert(`입력된 11자리 숫자: ${inputText.value}`);
+                        }
                     }
                 });
             });
