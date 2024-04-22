@@ -138,12 +138,12 @@
                     const distance = Math.sqrt(dx * dx + dy * dy);
 
                     if (distance <= 25 && drop.visible && drop.character !== undefined) {
-                        if (inputText.value.length < 11) {
+                        if (inputText.value.length < 13) {
                             inputText.value += drop.character;
                             drop.visible = false;
                         }
-                        if (inputText.value.length === 11) {
-                            const resetInput = confirm(`입력된 11자리 숫자: ${inputText.value}\n다시 입력하시겠습니까?`);
+                        if (inputText.value.length === 13) {
+                            const resetInput = confirm(`Your Phone Number: ${inputText.value}\n다시 입력하시겠습니까?`);
                             if (resetInput) {
                                 inputText.value = '';
                             }
