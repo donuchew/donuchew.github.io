@@ -97,18 +97,25 @@
             canvas.addEventListener('click', function(event) {
                 const mouseX = event.clientX;
                 const mouseY = event.clientY;
-
+            
                 drops.forEach((drop) => {
-                    // Check if click position is within the bounding box of the drop
                     const textWidth = ctx.measureText(drop.number).width;
                     const textHeight = parseInt(ctx.font);
-
-                    if (mouseX >= drop.x && mouseX <= drop.x + textWidth &&
-                        mouseY >= drop.y - textHeight && mouseY <= drop.y) {
+            
+                    // Calculate boundaries of the drop's rectangle area
+                    const dropLeft = drop.x;
+                    const dropRight = drop.x + textWidth;
+                    const dropTop = drop.y - textHeight;
+                    const dropBottom = drop.y;
+            
+                    // Check if click position is within the bounding box of the drop
+                    if (mouseX >= dropLeft && mouseX <= dropRight &&
+                        mouseY >= dropTop && mouseY <= dropBottom) {
                         inputText.value += drop.number; // Add the number to input text
                     }
                 });
             });
+
 
             // Start animation
             createDrops();
