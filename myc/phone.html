@@ -12,6 +12,7 @@
             justify-content: center;
             align-items: center;
             font-family: Arial, sans-serif;
+            background-color: black; /* 전체 배경을 검은색으로 설정 */
         }
 
         .container {
@@ -27,7 +28,7 @@
 <body>
     <div class="container">
         <canvas id="canvas"></canvas>
-        <p>클릭하여 11자리 숫자를 완성하세요!</p>
+        <p style="color: white;">클릭하여 11자리 숫자를 완성하세요!</p>
     </div>
 
     <script>
@@ -51,7 +52,7 @@
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
 
                 // Draw falling numbers
-                ctx.fillStyle = 'black';
+                ctx.fillStyle = 'white'; // 숫자는 흰색으로 설정
                 ctx.font = '20px Arial';
 
                 for (let i = 0; i < clickedNumbers.length; i++) {
@@ -66,10 +67,9 @@
                 const mouseY = event.clientY - rect.top;
 
                 // Check if click is within the number area
-                if (mouseY >= 30 && mouseY <= 60) {
-                    const numberIndex = Math.floor((mouseX - 30) / 25);
+                if (mouseY >= 30 && mouseY <= 50) {
                     const newNumber = generateRandomNumber();
-                    clickedNumbers[numberIndex] = newNumber.toString();
+                    clickedNumbers.push(newNumber.toString());
 
                     // Redraw canvas with updated numbers
                     draw();
