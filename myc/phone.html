@@ -22,8 +22,7 @@
             left: 50%;
             transform: translate(-50%, -50%);
             text-align: center;
-            padding: 20px; /* 추가: 내부 패딩 적용 */
-            border: 2px solid red; /* 추가: 빨간 테두리 적용 */
+            padding: 20px; /* 내부 패딩 */ 
         }
 
         .inputContainer {
@@ -49,7 +48,7 @@
     </div>
 
     <div class="phonenumresult">
-        <p>숫자를 클릭하여 아래 입력 창에 추가하세요! (11자리까지 입력 가능)</p>
+        <p>Enter Phone Number</p>
         <div class="inputContainer">
             <input type="text" id="inputText" readonly>
         </div>
@@ -85,26 +84,25 @@
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
 
                 ctx.fillStyle = 'white';
-                ctx.font = '30px Arial';
+                ctx.font = '20px Arial'; // 숫자 폰트 크기 변경
 
                 drops.forEach((drop) => {
                     if (drop.visible) {
-                        ctx.fillText(drop.number, drop.x, drop.y);
-                    }
+                        const textWidth = ctx.measureText(drop.number).width;
+                        const textHeight = parseInt(ctx.font);
 
-                    // Draw red border around the drop's rectangle area only if it has a number
-                    const textWidth = ctx.measureText(drop.number).width;
-                    const textHeight = parseInt(ctx.font);
-                    const padding = 10; // 추가: 테두리 내부 여백
-                    const dropLeft = drop.x - padding;
-                    const dropRight = drop.x + textWidth + padding;
-                    const dropTop = drop.y - textHeight - padding;
-                    const dropBottom = drop.y + padding;
+                        const dropLeft = drop.x - 15; // padding 값 변경
+                        const dropTop = drop.y - textHeight / 2; // 정중앙 배치 위해 계산
 
-                    if (drop.number !== '') {
-                        ctx.strokeStyle = 'red';
-                        ctx.lineWidth = 2;
-                        ctx.strokeRect(dropLeft, dropTop, textWidth + 2 * padding, textHeight + 2 * padding);
+                        // Draw red circle (filled) for each drop
+                        ctx.beginPath();
+                        ctx.arc(drop.x, drop.y, 25, 0, Math.PI * 2); // 동그란 모양 그리기
+                        ctx.fillStyle = 'red';
+                        ctx.fill();
+
+                        // Draw the number in white inside the circle
+                        ctx.fillStyle = 'white';
+                        ctx.fillText(drop.number, dropLeft, dropTop);
                     }
 
                     drop.y += drop.speed;
@@ -128,22 +126,27 @@
                 drops.forEach((drop) => {
                     const textWidth = ctx.measureText(drop.number).width;
                     const textHeight = parseInt(ctx.font);
-                    const padding = 10;
-                    const dropLeft = drop.x - padding;
-                    const dropRight = drop.x + textWidth + padding;
-                    const dropTop = drop.y - textHeight - padding;
-                    const dropBottom = drop.y + padding;
+                    const dropLeft = drop.x - 15; // padding 값 변경
+                    const dropRight = drop.x + 15 + textWidth; // padding 값 변경
+                    const dropTop = drop.y - textHeight / 2; // 정중앙 배치 위해 계산
+                    const dropBottom = drop.y + textHeight / 2; // 정중앙 배치 위해 계산
 
-                    // Check if click position is within the bounding box of the drop and it has a number
-                    if (mouseX >= dropLeft && mouseX <= dropRight &&
-                        mouseY >= dropTop && mouseY <= dropBottom && drop.visible && drop.number !== '') {
+                    // Check if click position is within the bounding circle of the drop and it has a number
+                    const dx = mouseX - drop.x;
+                    const dy = mouseY - drop.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance <= 25 && drop.visible && drop.number !== '') { // 클릭 영역 조정
                         if (inputText.value.length < 11) {
                             inputText.value += drop.number; // Add the number to input text
                             drop.visible = false; // Hide the drop
                         }
                         if (inputText.value.length === 11) {
-                            // Show result in alert when 11 digits are entered
-                            alert(`입력된 11자리 숫자: ${inputText.value}`);
+                            // Show result in confirm dialog when 11 digits are entered
+                            const resetInput = confirm(`Your Phone Number: ${inputText.value}\n다시 입력하시겠습니까?`);
+                            if (resetInput) {
+                                inputText.value = ''; // Reset input text
+                            }
                         }
                     }
                 });
