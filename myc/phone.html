@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Random Number Game</title>
+    <title>Raining Numbers</title>
     <style>
         body, html {
             height: 100%;
@@ -17,74 +17,94 @@
 
         .container {
             text-align: center;
+            position: relative;
         }
 
         canvas {
             border: 1px solid black;
-            cursor: pointer;
+            cursor: default;
+        }
+
+        #inputContainer {
+            margin-top: 20px;
+        }
+
+        #inputText {
+            width: 300px;
+            height: 30px;
+            font-size: 16px;
+            text-align: center;
         }
     </style>
 </head>
 <body>
     <div class="container">
         <canvas id="canvas"></canvas>
-        <p style="color: white;">클릭하여 11자리 숫자를 완성하세요!</p>
+        <p style="color: white;">숫자를 클릭하여 아래 입력 창에 추가하세요!</p>
+        <div id="inputContainer">
+            <input type="text" id="inputText" readonly>
+        </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const canvas = document.getElementById('canvas');
             const ctx = canvas.getContext('2d');
+            const inputText = document.getElementById('inputText');
 
             // Set canvas size
-            canvas.width = 400;
-            canvas.height = 80; // 캔버스 높이를 80으로 조정하여 숫자 공이 더 크게 보이도록 함
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight - 100;
 
-            // Array to store clicked numbers
-            let clickedNumbers = [];
+            const NUM_OF_DROPS = 30;
+            const dropSpeed = 2;
+            let drops = [];
 
-            // Generate random falling numbers
-            function generateRandomNumber() {
-                return Math.floor(Math.random() * 10); // Random number from 0 to 9
+            function createDrops() {
+                for (let i = 0; i < NUM_OF_DROPS; i++) {
+                    drops.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height,
+                        speed: dropSpeed,
+                        number: Math.floor(Math.random() * 10).toString()
+                    });
+                }
             }
 
             function draw() {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-                // Draw falling numbers
                 ctx.fillStyle = 'white';
-                ctx.font = '30px Arial'; // 숫자 크기를 30px로 키움
+                ctx.font = '20px Arial';
 
-                for (let i = 0; i < clickedNumbers.length; i++) {
-                    ctx.fillText(clickedNumbers[i], 30 + i * 35, 50); // 숫자 간격을 넓혀서 보기 좋게 조정
-                }
+                drops.forEach((drop) => {
+                    ctx.fillText(drop.number, drop.x, drop.y);
+                    drop.y += drop.speed;
+
+                    // Reset drop when it goes out of canvas
+                    if (drop.y > canvas.height) {
+                        drop.x = Math.random() * canvas.width;
+                        drop.y = -20;
+                        drop.number = Math.floor(Math.random() * 10).toString();
+                    }
+                });
+
+                requestAnimationFrame(draw);
             }
 
-            // Handle canvas click event
             canvas.addEventListener('click', function(event) {
-                const rect = canvas.getBoundingClientRect();
-                const mouseX = event.clientX - rect.left;
-                const mouseY = event.clientY - rect.top;
+                const mouseX = event.clientX;
+                const mouseY = event.clientY;
 
-                // Check if click is within the number area
-                if (mouseY >= 30 && mouseY <= 60) {
-                    const newNumber = generateRandomNumber();
-                    clickedNumbers.push(newNumber.toString());
-
-                    // Redraw canvas with updated numbers
-                    draw();
-
-                    // Check if 11 numbers are completed
-                    if (clickedNumbers.length === 11) {
-                        const finalString = clickedNumbers.join('');
-                        alert(`완성된 11자리 숫자: ${finalString}`);
-                        clickedNumbers = []; // Reset for a new game
-                        draw(); // Clear canvas
+                drops.forEach((drop) => {
+                    if (mouseX >= drop.x && mouseX <= drop.x + 20 && mouseY >= drop.y && mouseY <= drop.y + 20) {
+                        inputText.value += drop.number; // 입력 창에 숫자 추가
                     }
-                }
+                });
             });
 
-            // Initial draw to display empty canvas
+            // Start animation
+            createDrops();
             draw();
         });
     </script>
