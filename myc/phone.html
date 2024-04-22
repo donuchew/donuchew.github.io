@@ -35,6 +35,12 @@
             font-size: 16px;
             text-align: center;
         }
+        .phonenumresult{
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
     </style>
 </head>
 <body>
@@ -80,7 +86,22 @@
                 ctx.font = '30px Arial';
 
                 drops.forEach((drop) => {
-                    ctx.fillText(drop.number, drop.x, drop.y);
+                    if (drop.visible) {
+                        ctx.fillText(drop.number, drop.x, drop.y);
+                    }
+
+                    // Draw red border around the drop's rectangle area
+                    const textWidth = ctx.measureText(drop.number).width;
+                    const textHeight = parseInt(ctx.font);
+                    const dropLeft = drop.x;
+                    const dropRight = drop.x + textWidth;
+                    const dropTop = drop.y - textHeight;
+                    const dropBottom = drop.y;
+
+                    ctx.strokeStyle = 'red';
+                    ctx.lineWidth = 2;
+                    ctx.strokeRect(dropLeft, dropTop, textWidth, textHeight);
+
                     drop.y += drop.speed;
 
                     // Reset drop when it goes out of canvas
@@ -88,6 +109,7 @@
                         drop.x = Math.random() * canvas.width;
                         drop.y = -20;
                         drop.number = Math.floor(Math.random() * 10).toString();
+                        drop.visible = true;
                     }
                 });
 
@@ -97,25 +119,23 @@
             canvas.addEventListener('click', function(event) {
                 const mouseX = event.clientX;
                 const mouseY = event.clientY;
-            
+
                 drops.forEach((drop) => {
                     const textWidth = ctx.measureText(drop.number).width;
                     const textHeight = parseInt(ctx.font);
-            
-                    // Calculate boundaries of the drop's rectangle area
                     const dropLeft = drop.x;
                     const dropRight = drop.x + textWidth;
                     const dropTop = drop.y - textHeight;
                     const dropBottom = drop.y;
-            
+
                     // Check if click position is within the bounding box of the drop
                     if (mouseX >= dropLeft && mouseX <= dropRight &&
-                        mouseY >= dropTop && mouseY <= dropBottom) {
+                        mouseY >= dropTop && mouseY <= dropBottom && drop.visible) {
                         inputText.value += drop.number; // Add the number to input text
+                        drop.visible = false; // Hide the drop
                     }
                 });
             });
-
 
             // Start animation
             createDrops();
