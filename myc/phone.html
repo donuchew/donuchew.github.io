@@ -1,11 +1,28 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Random Number Game</title>
-    <link rel="stylesheet" href="styles.css">
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: Arial, sans-serif;
+        }
+
+        .container {
+            text-align: center;
+        }
+
+        canvas {
+            border: 1px solid black;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
     <div class="container">
@@ -13,6 +30,63 @@
         <p>클릭하여 11자리 숫자를 완성하세요!</p>
     </div>
 
-    <script src="script.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+
+            // Set canvas size
+            canvas.width = 400;
+            canvas.height = 200;
+
+            // Array to store clicked numbers
+            let clickedNumbers = [];
+
+            // Generate random falling numbers
+            function generateRandomNumber() {
+                return Math.floor(Math.random() * 10); // Random number from 0 to 9
+            }
+
+            function draw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                // Draw falling numbers
+                ctx.fillStyle = 'black';
+                ctx.font = '20px Arial';
+
+                for (let i = 0; i < clickedNumbers.length; i++) {
+                    ctx.fillText(clickedNumbers[i], 30 + i * 25, 50);
+                }
+            }
+
+            // Handle canvas click event
+            canvas.addEventListener('click', function(event) {
+                const rect = canvas.getBoundingClientRect();
+                const mouseX = event.clientX - rect.left;
+                const mouseY = event.clientY - rect.top;
+
+                // Check if click is within the number area
+                if (mouseY >= 30 && mouseY <= 60) {
+                    const numberIndex = Math.floor((mouseX - 30) / 25);
+                    const newNumber = generateRandomNumber();
+                    clickedNumbers[numberIndex] = newNumber.toString();
+
+                    // Redraw canvas with updated numbers
+                    draw();
+
+                    // Check if 11 numbers are completed
+                    if (clickedNumbers.length === 11) {
+                        const finalString = clickedNumbers.join('');
+                        alert(`완성된 11자리 숫자: ${finalString}`);
+                        clickedNumbers = []; // Reset for a new game
+                        draw(); // Clear canvas
+                    }
+                }
+            });
+
+            // Initial draw to display empty canvas
+            draw();
+        });
+    </script>
 </body>
 </html>
