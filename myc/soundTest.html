@@ -3,29 +3,206 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Play SoundCloud Track</title>
+    <title>Enter Your Phone Number with Music</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #1ca1b5;
+            color: #fbbba9;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        #toggleMusic {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            padding: 20px;
+            cursor: pointer;
+            z-index: 9999; /* 항상 위에 표시되도록 */
+        }
+
+        .inputContainer {
+            margin-top: 20px;
+        }
+
+        input {
+            width: 300px;
+            height: 30px;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        canvas {
+            border: 1px solid black; /* 테두리 색상 검은색 */
+        }
+    </style>
 </head>
 <body>
-    <h1>Play SoundCloud Track</h1>
+<div class="container">
+    <canvas id="canvas"></canvas>
+</div>
 
-    <!-- SoundCloud iframe -->
-    <iframe id="soundCloudFrame" width="100%" height="300" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/679857032&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&visual=true"></iframe>
+<div class="phonenumresult" id="toggleMusic">
+    <p>Catch Phone Number(000-0000-0000)<br>Click Here To Reset</p>
+    <div class="inputContainer">
+        <input type="text" id="inputText" readonly maxlength="13">
+    </div>
+</div>
 
-    <button onclick="playSoundCloud()">Play SoundCloud Track</button>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const inputText = document.getElementById('inputText');
+        const toggleMusic = document.getElementById('toggleMusic');
+        const soundCloudUrl = 'https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/679857032&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&visual=true';
 
-    <script>
-        function playSoundCloud() {
-            const soundCloudFrame = document.getElementById('soundCloudFrame');
-            const widget = SC.Widget(soundCloudFrame);
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
 
-            widget.bind(SC.Widget.Events.READY, function() {
-                // SoundCloud 트랙 재생
-                widget.play();
+        const NUM_OF_DROPS = 50;
+        let drops = [];
+        let startTime = null; // 입력 시작 시간 저장
+        let endTime = null; // 입력 종료 시간 저장
+        let clickedDrop = null; // 클릭된 공을 추적하기 위한 변수
+
+        function createDrops() {
+            for (let i = 0; i < NUM_OF_DROPS; i++) {
+                let text = getRandomCharacter(); // 초기 문자 랜덤 설정
+                drops.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    speed: Math.random() * 5 + 2,
+                    xOffset: Math.random() * 4 - 2,
+                    yOffset: Math.random() * 4 - 2,
+                    radius: 50,
+                    text: text,
+                    visible: true // 공의 가시성 상태를 나타내는 값
+                });
+            }
+        }
+
+        function getRandomCharacter() {
+            const characters = '0123456789-'; // 숫자와 '-'만 포함
+            const randomIndex = Math.floor(Math.random() * characters.length);
+            return characters[randomIndex];
+        }
+
+        function updateDropsText() {
+            drops.forEach((drop) => {
+                drop.text = getRandomCharacter(); // 랜덤 문자로 업데이트
             });
         }
-    </script>
-    
-    <!-- SoundCloud SDK 로드 -->
-    <script src="https://w.soundcloud.com/player/api.js" async></script>
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            drops.forEach((drop) => {
+                if (drop.visible) { // 보이는 공만 그림
+                    ctx.beginPath();
+                    ctx.arc(drop.x, drop.y, drop.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = '#873746';
+                    ctx.fill();
+
+                    ctx.fillStyle = '#fbbba9';
+                    ctx.font = '20px Arial';
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillText(drop.text, drop.x, drop.y);
+
+                    drop.x += drop.xOffset;
+                    drop.y += drop.yOffset;
+
+                    if (drop.x < drop.radius || drop.x > canvas.width - drop.radius) {
+                        drop.xOffset *= -1;
+                    }
+                    if (drop.y < drop.radius || drop.y > canvas.height - drop.radius) {
+                        drop.yOffset *= -1;
+                    }
+                }
+            });
+
+            requestAnimationFrame(draw);
+        }
+
+        createDrops();
+        draw();
+
+        toggleMusic.addEventListener('click', function() {
+            const soundCloudFrame = document.createElement('iframe');
+            soundCloudFrame.width = '100%';
+            soundCloudFrame.height = '300';
+            soundCloudFrame.scrolling = 'no';
+            soundCloudFrame.frameBorder = 'no';
+            soundCloudFrame.allow = 'autoplay';
+            soundCloudFrame.src = soundCloudUrl;
+
+            document.body.appendChild(soundCloudFrame);
+
+            inputText.value = ''; // 입력 창 리셋
+            startTime = Date.now();
+        });
+
+        // 클릭 이벤트 처리
+        canvas.addEventListener('click', function(event) {
+            const clickX = event.clientX;
+            const clickY = event.clientY;
+
+            // 공을 클릭했을 때
+            drops.forEach((drop) => {
+                if (drop.visible) { // 보이는 공만 처리
+                    const distance = Math.sqrt((clickX - drop.x) ** 2 + (clickY - drop.y) ** 2);
+
+                    if (distance <= drop.radius) {
+                        if (inputText.value.length < 13) {
+                            inputText.value += drop.text; // 입력된 문자 추가
+                        }
+
+                        // 모든 숫자 입력 시 confirm 창 띄우기
+                        if (inputText.value.length === 13) {
+                            endTime = Date.now() - startTime;
+                            const elapsedTime = Math.floor((endTime) / 1000);
+                            const minutes = Math.floor(elapsedTime / 60);
+                            const seconds = elapsedTime % 60;
+                            const formattedTime = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+                            const message = `Time: ${formattedTime}`;
+
+                            const confirmation = confirm('Your Phone Number: ' + inputText.value + '.\n' + message + '\nRetry?');
+                            if (confirmation) {
+                                inputText.value = ''; // input 창 리셋
+                                startTime = Date.now();
+                                 NUM_OF_DROPS = 50;
+                            }
+                        }
+
+                        // 공 숨김
+                        drop.visible = false;
+
+                        // 공 색상 변경
+                        ctx.beginPath();
+                        ctx.arc(drop.x, drop.y, drop.radius, 0, Math.PI * 2);
+                        ctx.fillStyle = 'yellow';
+                        ctx.fill();
+
+                        // 공의 움직임 멈춤
+                        drop.xOffset = 0;
+                        drop.yOffset = 0;
+                    }
+                }
+            });
+
+            // inputText의 내용을 누적하여 보여주기 위해 해당 코드를 추가
+            inputText.focus(); // input 요소에 포커스를 맞춤
+        });
+
+    });
+</script>
 </body>
 </html>
