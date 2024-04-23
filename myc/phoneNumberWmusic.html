@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enter Your Phone Number with Music</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #1ca1b5;
+            color: #fbbba9;
+            font-family: Arial, sans-serif;
+            overflow: hidden;
+        }
+
+        #toggleMusic {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            padding: 20px;
+            cursor: pointer;
+            z-index: 9999; /* 항상 위에 표시되도록 */
+        }
+
+        .inputContainer {
+            margin-top: 20px;
+        }
+
+        input {
+            width: 300px;
+            height: 30px;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        canvas {
+            border: 0px solid white;
+        }
+    </style>
+</head>
+<body>
+<div class="container">
+    <canvas id="canvas"></canvas>
+</div>
+
+<div class="phonenumresult" id="toggleMusic">
+    <p>Enter Phone Number(000-0000-0000)</p>
+    <div class="inputContainer">
+        <input type="text" id="inputText" readonly>
+    </div>
+</div>
+
+<audio id="bgMusic" loop>
+    <source src="https://donuchew.github.io/media/password-infinity.mp3" type="audio/mpeg">
+</audio>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const inputText = document.getElementById('inputText');
+        const toggleMusic = document.getElementById('toggleMusic');
+        const bgMusic = document.getElementById('bgMusic');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const NUM_OF_DROPS = 50;
+        let drops = [];
+        let audioContext = null;
+        let analyser = null;
+        let bufferLength = 0;
+        let startTime = null; // 입력 시작 시간 저장
+        let endTime = null; // 입력 종료 시간 저장
+        let clickedDrops = []; // 클릭된 공을 추적하기 위한 배열
+
+        function createAudioContext() {
+            audioContext = new AudioContext();
+            const source = audioContext.createMediaElementSource(bgMusic);
+            analyser = audioContext.createAnalyser();
+            source.connect(analyser);
+            analyser.connect(audioContext.destination);
+            bufferLength = analyser.frequencyBinCount;
+        }
+
+        function createDrops() {
+            for (let i = 0; i < NUM_OF_DROPS; i++) {
+                let text = getRandomCharacter(); // 초기 문자 랜덤 설정
+                drops.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    speed: Math.random() * 5 + 2,
+                    xOffset: Math.random() * 4 - 2,
+                    yOffset: Math.random() * 4 - 2,
+                    radius: 50,
+                    text: text,
+                    visible: true // 공의 가시성 상태를 나타내는 값
+                });
+            }
+        }
+
+        function getRandomCharacter() {
+            const characters = '0123456789-!'; // '!'는 enter임
+            const randomIndex = Math.floor(Math.random() * characters.length);
+            return characters[randomIndex];
+        }
+
+        function updateDropsText() {
+            drops.forEach((drop) => {
+                drop.text = getRandomCharacter(); // 랜덤 문자로 업데이트
+            });
+        }
+
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            if (audioContext && audioContext.state === 'suspended') {
+                toggleMusic.addEventListener('click', function() {
+                    audioContext.resume().then(() => {
+                        console.log('Audio context resumed.');
+                    });
+                });
+            }
+
+            if (audioContext && audioContext.state === 'running') {
+                const dataArray = new Uint8Array(bufferLength);
+                analyser.getByteFrequencyData(dataArray);
+                const averageFrequency = dataArray.reduce((a, b) => a + b, 0) / bufferLength;
+
+                drops.forEach((drop) => {
+                    if (drop.visible) { // 보이는 공만 그림
+                        ctx.beginPath();
+                        ctx.arc(drop.x, drop.y, drop.radius * (averageFrequency / 100), 0, Math.PI * 2);
+                        ctx.fillStyle = '#873746';
+                        ctx.fill();
+
+                        ctx.fillStyle = '#fbbba9';
+                        ctx.font = '20px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(drop.text, drop.x, drop.y);
+
+                        drop.x += drop.xOffset * (averageFrequency / 20);
+                        drop.y += drop.yOffset * (averageFrequency / 20);
+
+                        if (drop.x < drop.radius || drop.x > canvas.width - drop.radius) {
+                            drop.xOffset *= -1;
+                        }
+                        if (drop.y < drop.radius || drop.y > canvas.height - drop.radius) {
+                            drop.yOffset *= -1;
+                        }
+                    }
+                });
+            }
+
+            requestAnimationFrame(draw);
+        }
+
+        createDrops();
+        draw();
+        createAudioContext();
+
+        // 문자 업데이트 타이머 설정 (5초마다 문자 변경)
+        setInterval(updateDropsText, 5000);
+
+        toggleMusic.addEventListener('click', function() {
+            bgMusic.play();
+            inputText.value = ''; // input 창 리셋
+            startTime = Date.now();
+            //toggleMusic.style.display = 'none'; // 노래 재생 버튼 숨기기
+        });
+
+        // 클릭 이벤트 처리
+        canvas.addEventListener('click', function(event) {
+            const clickX = event.clientX;
+            const clickY = event.clientY;
+
+            // 공을 클릭했을 때
+            drops.forEach((drop) => {
+                if (drop.visible) { // 보이는 공만 처리
+                    const distance = Math.sqrt((clickX - drop.x) ** 2 + (clickY - drop.y) ** 2);
+
+                    if (distance <= drop.radius) {
+                        // '!'를 클릭한 경우
+                        if (drop.text === '!') {
+                            //시간체크 
+                            endTime = Date.now() - startTime;
+
+                            const elapsedTime = Math.floor((endTime) / 1000); // 밀리초를 초 단위로 변환
+                            const minutes = Math.floor(elapsedTime / 60);
+                            const seconds = elapsedTime % 60;
+                            const formattedTime = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+                            const message = `Time: ${formattedTime}`;
+                          
+                            const confirmation = confirm('Your Phone Number: ' + inputText.value + '.\n' + message+'  \nRetry?');
+                            if (confirmation) {
+                                inputText.value = ''; // input 창 리셋
+                                startTime = Date.now();
+                            }
+                        } else {
+                            // '!' 이외의 문자를 클릭한 경우, 문자를 누적하여 inputText에 표시
+                            inputText.value += drop.text;
+                        }
+
+                        // 공 숨김
+                        drop.visible = false;
+
+                        // 해당 공의 색 변경
+                        ctx.beginPath();
+                        ctx.arc(drop.x, drop.y, drop.radius, 0, Math.PI * 2);
+                        ctx.fillStyle = 'yellow'; 
+                        ctx.fill();
+
+                        // 공의 움직임 멈춤
+                        drop.xOffset = 0;
+                        drop.yOffset = 0;
+                    }
+                }
+            });
+
+            // inputText의 내용을 누적하여 보여주기 위해 해당 코드를 추가
+            inputText.focus(); // input 요소에 포커스를 맞춤
+        });
+
+    });
+</script>
+</body>
+</html>
