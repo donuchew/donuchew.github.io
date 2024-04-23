@@ -89,7 +89,7 @@
 
         function createDrops() {
             for (let i = 0; i < NUM_OF_DROPS; i++) {
-                let text = Math.random() < 0.9 ? Math.floor(Math.random() * 10).toString() : '-';
+                let text = getRandomCharacter(); // 초기 문자 랜덤 설정
                 drops.push({
                     x: Math.random() * canvas.width,
                     y: Math.random() * canvas.height,
@@ -101,6 +101,18 @@
                     visible: true // 공의 가시성 상태를 나타내는 플래그
                 });
             }
+        }
+
+        function getRandomCharacter() {
+            const characters = '0123456789-'; // 사용할 문자 집합
+            const randomIndex = Math.floor(Math.random() * characters.length);
+            return characters[randomIndex];
+        }
+
+        function updateDropsText() {
+            drops.forEach((drop) => {
+                drop.text = getRandomCharacter(); // 랜덤 문자로 업데이트
+            });
         }
 
         function draw() {
@@ -152,9 +164,12 @@
         draw();
         createAudioContext();
 
+        // 문자 업데이트 타이머 설정 (4초마다 문자 변경)
+        setInterval(updateDropsText, 4000);
+
         toggleMusic.addEventListener('click', function() {
             bgMusic.play();
-            //toggleMusic.style.display = 'none'; // 노래 재생 버튼 숨기기
+            toggleMusic.style.display = 'none'; // 노래 재생 버튼 숨기기
         });
 
         // 클릭 이벤트 처리
