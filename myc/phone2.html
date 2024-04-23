@@ -72,10 +72,10 @@
         canvas.height = window.innerHeight;
 
         const NUM_OF_DROPS = 50;
-        let drops = [];
-
+        let drops = []; 
         let audioContext = null;
         let analyser = null;
+        let bufferLength = 0;
 
         function createAudioContext() {
             audioContext = new AudioContext();
@@ -83,6 +83,9 @@
             analyser = audioContext.createAnalyser();
             source.connect(analyser);
             analyser.connect(audioContext.destination);
+
+            // Set bufferLength based on analyser's frequencyBinCount
+            bufferLength = analyser.frequencyBinCount;
         }
 
         function createDrops() {
