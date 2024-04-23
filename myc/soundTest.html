@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Play SoundCloud Track</title>
+</head>
+<body>
+    <h1>Play SoundCloud Track</h1>
+
+    <!-- SoundCloud iframe -->
+    <iframe id="soundCloudFrame" width="100%" height="300" scrolling="no" frameborder="no" allow="autoplay" src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/tracks/679857032&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&visual=true"></iframe>
+
+    <button onclick="playSoundCloud()">Play SoundCloud Track</button>
+
+    <script>
+        function playSoundCloud() {
+            const soundCloudFrame = document.getElementById('soundCloudFrame');
+            const widget = SC.Widget(soundCloudFrame);
+
+            widget.bind(SC.Widget.Events.READY, function() {
+                // SoundCloud 트랙 재생
+                widget.play();
+            });
+        }
+    </script>
+    
+    <!-- SoundCloud SDK 로드 -->
+    <script src="https://w.soundcloud.com/player/api.js" async></script>
+</body>
+</html>
