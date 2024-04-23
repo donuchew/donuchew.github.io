@@ -55,7 +55,7 @@
     </div>
 </div>
 
-<audio id="bgMusic" autoplay loop>
+<audio id="bgMusic" loop>
     <source src="https://donuchew.github.io/media/password-infinity.mp3" type="audio/mpeg">
 </audio>
 
@@ -74,16 +74,16 @@
         const NUM_OF_DROPS = 50;
         let drops = [];
 
-        // Create audio context and connect to the music source
-        const audioContext = new AudioContext();
-        const source = audioContext.createMediaElementSource(bgMusic);
-        const analyser = audioContext.createAnalyser();
-        source.connect(analyser);
-        analyser.connect(audioContext.destination);
+        let audioContext = null;
+        let analyser = null;
 
-        // Set up array to hold frequency data
-        const bufferLength = analyser.frequencyBinCount;
-        const dataArray = new Uint8Array(bufferLength);
+        function createAudioContext() {
+            audioContext = new AudioContext();
+            const source = audioContext.createMediaElementSource(bgMusic);
+            analyser = audioContext.createAnalyser();
+            source.connect(analyser);
+            analyser.connect(audioContext.destination);
+        }
 
         function createDrops() {
             for (let i = 0; i < NUM_OF_DROPS; i++) {
@@ -109,50 +109,53 @@
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            analyser.getByteFrequencyData(dataArray);
-            const averageFrequency = dataArray.reduce((a, b) => a + b, 0) / bufferLength;
+            if (audioContext.state === 'suspended') {
+                toggleMusic.addEventListener('click', function() {
+                    audioContext.resume().then(() => {
+                        console.log('Audio context resumed.');
+                    });
+                });
+            }
 
-            drops.forEach((drop) => {
-                if (drop.visible && drop.character !== undefined) {
-                    // Draw red circle (filled) for each drop
-                    ctx.beginPath();
-                    ctx.arc(drop.x, drop.y, drop.radius, 0, Math.PI * 2);
-                    ctx.fillStyle = 'red';
-                    ctx.fill();
+            if (audioContext.state === 'running') {
+                analyser.getByteFrequencyData(dataArray);
+                const averageFrequency = dataArray.reduce((a, b) => a + b, 0) / bufferLength;
 
-                    // Draw the character in white inside the circle
-                    ctx.fillStyle = 'white';
-                    const textWidth = ctx.measureText(drop.character).width;
-                    ctx.fillText(drop.character, drop.x - textWidth / 2, drop.y);
-                }
+                drops.forEach((drop) => {
+                    if (drop.visible && drop.character !== undefined) {
+                        // Draw red circle (filled) for each drop
+                        ctx.beginPath();
+                        ctx.arc(drop.x, drop.y, drop.radius, 0, Math.PI * 2);
+                        ctx.fillStyle = 'red';
+                        ctx.fill();
 
-                // Update drop position based on offsets and music speed
-                drop.x += drop.xOffset * (averageFrequency / 20); // Adjust x based on average frequency
-                drop.y += drop.yOffset * (averageFrequency / 20); // Adjust y based on average frequency
+                        // Draw the character in white inside the circle
+                        ctx.fillStyle = 'white';
+                        const textWidth = ctx.measureText(drop.character).width;
+                        ctx.fillText(drop.character, drop.x - textWidth / 2, drop.y);
+                    }
 
-                // Bounce off the walls
-                if (drop.x < drop.radius || drop.x > canvas.width - drop.radius) {
-                    drop.xOffset *= -1; // Reverse x direction
-                }
-                if (drop.y < drop.radius || drop.y > canvas.height - drop.radius) {
-                    drop.yOffset *= -1; // Reverse y direction
-                }
-            });
+                    // Update drop position based on offsets and music speed
+                    drop.x += drop.xOffset * (averageFrequency / 20); // Adjust x based on average frequency
+                    drop.y += drop.yOffset * (averageFrequency / 20); // Adjust y based on average frequency
+
+                    // Bounce off the walls
+                    if (drop.x < drop.radius || drop.x > canvas.width - drop.radius) {
+                        drop.xOffset *= -1; // Reverse x direction
+                    }
+                    if (drop.y < drop.radius || drop.y > canvas.height - drop.radius) {
+                        drop.yOffset *= -1; // Reverse y direction
+                    }
+                });
+            }
 
             requestAnimationFrame(draw);
         }
 
-        toggleMusic.addEventListener('click', function() {
-            if (bgMusic.paused) {
-                bgMusic.play();
-            } else {
-                bgMusic.pause();
-            }
-        });
-
-        // Start animation
+        // Start animation and create audio context
         createDrops();
         draw();
+        createAudioContext();
     });
 </script>
 </body>
