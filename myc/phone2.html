@@ -49,9 +49,9 @@
 </div>
 
 <div class="phonenumresult" id="toggleMusic">
-    <p>Enter Phone Number(000-0000-0000)</p>
+    <p>Enter Phone Number (000-0000-0000)</p>
     <div class="inputContainer">
-        <input type="text" id="inputText" readonly>
+        <input type="text" id="inputText" maxlength="13" readonly>
     </div>
 </div>
 
@@ -130,6 +130,18 @@
                         drop.yOffset *= -1;
                     }
                 });
+
+                // Check input length and display input text
+                inputText.value = inputText.value.replace(/[^\d-]/g, ''); // Allow only digits and dash
+                if (inputText.value.length === 13) {
+                    // Display confirmation dialog
+                    setTimeout(() => {
+                        const confirmed = confirm('You entered: ' + inputText.value);
+                        if (confirmed) {
+                            inputText.value = ''; // Clear input after confirmation
+                        }
+                    }, 1000); // Delay confirmation for visual effect
+                }
             }
 
             requestAnimationFrame(draw);
@@ -142,6 +154,14 @@
         toggleMusic.addEventListener('click', function() {
             bgMusic.play();
             toggleMusic.style.display = 'none'; // Hide the toggle button once music starts
+        });
+
+        // Handle input when clicking on canvas
+        canvas.addEventListener('click', function() {
+            if (inputText.value.length < 13) {
+                const randomChar = Math.random() < 0.8 ? Math.floor(Math.random() * 10) : '-';
+                inputText.value += randomChar;
+            }
         });
     });
 </script>
