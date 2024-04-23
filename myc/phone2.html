@@ -42,8 +42,24 @@
             cursor: default;
         }
 
-        .container {
-            overflow: hidden;
+        #musicControls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+        }
+
+        button {
+            margin: 0 10px;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
         }
     </style>
 </head>
@@ -53,22 +69,23 @@
     </div>
 
     <div class="phonenumresult">
-        <p>Enter Phone Number (000-0000-0000)</p>
+        <p>Enter Phone Number(000-0000-0000)</p>
         <div class="inputContainer">
             <input type="text" id="inputText" readonly>
         </div>
     </div>
 
-    <audio id="bgMusic" autoplay loop>
-        <source src="https://donuchew.github.io/media/password-infinity.mp3" type="audio/mpeg"> 
-    </audio>
+    <div id="musicControls">
+        <button id="playBtn">Play</button>
+        <button id="pauseBtn">Pause</button>
+        <button id="stopBtn">Stop</button>
+    </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const canvas = document.getElementById('canvas');
             const ctx = canvas.getContext('2d');
             const inputText = document.getElementById('inputText');
-            const bgMusic = document.getElementById('bgMusic');
 
             // Set canvas size
             canvas.width = window.innerWidth;
@@ -76,17 +93,6 @@
 
             const NUM_OF_DROPS = 30;
             let drops = [];
-
-            // Create audio context
-            const audioContext = new AudioContext();
-            const audioElement = document.getElementById('bgMusic');
-            const source = audioContext.createMediaElementSource(audioElement);
-            const analyser = audioContext.createAnalyser();
-            source.connect(analyser);
-            analyser.connect(audioContext.destination);
-
-            const bufferLength = analyser.frequencyBinCount;
-            const dataArray = new Uint8Array(bufferLength);
 
             function createDrops() {
                 for (let i = 0; i < NUM_OF_DROPS; i++) {
@@ -109,14 +115,11 @@
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
 
                 ctx.fillStyle = 'white';
+                ctx.font = '20px Arial';
                 ctx.textBaseline = 'middle';
-
-                analyser.getByteFrequencyData(dataArray);
-                const averageFrequency = dataArray.reduce((a, b) => a + b, 0) / bufferLength;
 
                 drops.forEach((drop) => {
                     if (drop.visible && drop.character !== undefined) {
-                        const radius = 15 + (averageFrequency / 100); // Adjust radius based on frequency
                         const textWidth = ctx.measureText(drop.character).width;
                         const textHeight = parseInt(ctx.font);
 
@@ -125,7 +128,7 @@
 
                         // Draw red circle (filled) for each drop
                         ctx.beginPath();
-                        ctx.arc(drop.x, drop.y, radius, 0, Math.PI * 2);
+                        ctx.arc(drop.x, drop.y, 25, 0, Math.PI * 2);
                         ctx.fillStyle = 'red';
                         ctx.fill();
 
@@ -135,8 +138,8 @@
                     }
 
                     // Update drop position based on offsets (simulate wave-like movement)
-                    drop.x += drop.xOffset * (averageFrequency / 50); // Adjust speed based on frequency
-                    drop.y += drop.yOffset * (averageFrequency / 50); // Adjust speed based on frequency
+                    drop.x += drop.xOffset * (audioElement.currentTime / 10); // Adjust x based on current time
+                    drop.y += drop.yOffset * (audioElement.currentTime / 10); // Adjust y based on current time
 
                     // Bounce off the walls
                     if (drop.x < 0 || drop.x > canvas.width) {
@@ -179,9 +182,41 @@
                 });
             });
 
-            // Start animation
-            createDrops();
-            draw();
+            // Music controls
+            const audioElement = document.createElement('audio');
+            audioElement.src = 'https://donuchew.github.io/media/password-infinity.mp3';
+            document.body.appendChild(audioElement);
+
+            const playBtn = document.getElementById('playBtn');
+            const pauseBtn = document.getElementById('pauseBtn');
+            const stopBtn = document.getElementById('stopBtn');
+
+            playBtn.addEventListener('click', () => {
+                audioElement.play();
+            });
+
+            pauseBtn.addEventListener('click', () => {
+                audioElement.pause();
+            });
+
+            stopBtn.addEventListener('click', () => {
+                audioElement.pause();
+                audioElement.currentTime = 0;
+            });
+
+            // Start animation after user gesture
+            document.addEventListener('click', () => {
+                audioElement.play();
+                createDrops();
+                draw();
+            }, { once: true }); // Listen for click event once
+
+            // Handle audio context resume
+            document.addEventListener('keydown', () => {
+                if (audioContext.state === 'suspended') {
+                    audioContext.resume();
+                }
+            });
         });
     </script>
 </body>
