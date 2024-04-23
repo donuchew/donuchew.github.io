@@ -76,6 +76,7 @@
         let audioContext = null;
         let analyser = null;
         let bufferLength = 0;
+        let clickedDrops = []; // 클릭된 공을 추적하기 위한 배열
 
         function createAudioContext() {
             audioContext = new AudioContext();
@@ -96,7 +97,8 @@
                     xOffset: Math.random() * 4 - 2,
                     yOffset: Math.random() * 4 - 2,
                     radius: 15,
-                    text: text
+                    text: text,
+                    visible: true // 공의 가시성 상태를 나타내는 플래그
                 });
             }
         }
@@ -118,25 +120,27 @@
                 const averageFrequency = dataArray.reduce((a, b) => a + b, 0) / bufferLength;
 
                 drops.forEach((drop) => {
-                    ctx.beginPath();
-                    ctx.arc(drop.x, drop.y, drop.radius * (averageFrequency / 100), 0, Math.PI * 2);
-                    ctx.fillStyle = 'red';
-                    ctx.fill();
+                    if (drop.visible) { // 가시성 상태가 true인 공만 그림
+                        ctx.beginPath();
+                        ctx.arc(drop.x, drop.y, drop.radius * (averageFrequency / 100), 0, Math.PI * 2);
+                        ctx.fillStyle = 'red';
+                        ctx.fill();
 
-                    ctx.fillStyle = 'white';
-                    ctx.font = '20px Arial';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    ctx.fillText(drop.text, drop.x, drop.y);
+                        ctx.fillStyle = 'white';
+                        ctx.font = '20px Arial';
+                        ctx.textAlign = 'center';
+                        ctx.textBaseline = 'middle';
+                        ctx.fillText(drop.text, drop.x, drop.y);
 
-                    drop.x += drop.xOffset * (averageFrequency / 20);
-                    drop.y += drop.yOffset * (averageFrequency / 20);
+                        drop.x += drop.xOffset * (averageFrequency / 20);
+                        drop.y += drop.yOffset * (averageFrequency / 20);
 
-                    if (drop.x < drop.radius || drop.x > canvas.width - drop.radius) {
-                        drop.xOffset *= -1;
-                    }
-                    if (drop.y < drop.radius || drop.y > canvas.height - drop.radius) {
-                        drop.yOffset *= -1;
+                        if (drop.x < drop.radius || drop.x > canvas.width - drop.radius) {
+                            drop.xOffset *= -1;
+                        }
+                        if (drop.y < drop.radius || drop.y > canvas.height - drop.radius) {
+                            drop.yOffset *= -1;
+                        }
                     }
                 });
             }
@@ -150,7 +154,7 @@
 
         toggleMusic.addEventListener('click', function() {
             bgMusic.play();
-            //toggleMusic.style.display = 'none'; // Hide the toggle button once music starts
+            toggleMusic.style.display = 'none'; // 노래 재생 버튼 숨기기
         });
 
         // 클릭 이벤트 처리
@@ -160,21 +164,26 @@
 
             // 공을 클릭했을 때
             drops.forEach((drop) => {
-                const distance = Math.sqrt((clickX - drop.x) ** 2 + (clickY - drop.y) ** 2);
+                if (drop.visible) { // 가시성 상태가 true인 공만 처리
+                    const distance = Math.sqrt((clickX - drop.x) ** 2 + (clickY - drop.y) ** 2);
 
-                if (distance <= drop.radius) {
-                    // 클릭된 공의 값(inputText)을 변경
-                    inputText.value = drop.text; // drop 객체에 저장된 텍스트 값 사용
+                    if (distance <= drop.radius) {
+                        // 클릭된 공의 값(inputText)을 변경
+                        inputText.value += drop.text; // drop 객체에 저장된 텍스트 값을 누적
 
-                    // 해당 공의 색을 변경 (예시로 클릭된 공을 노란색으로 변경)
-                    ctx.beginPath();
-                    ctx.arc(drop.x, drop.y, drop.radius, 0, Math.PI * 2);
-                    ctx.fillStyle = 'yellow'; // 클릭된 공의 색상 변경
-                    ctx.fill();
+                        // 공의 가시성 상태를 숨김
+                        drop.visible = false;
 
-                    // 공의 움직임 멈추기 (선택적으로 추가 가능)
-                    drop.xOffset = 0;
-                    drop.yOffset = 0;
+                        // 해당 공의 색을 변경 (예시로 클릭된 공을 노란색으로 변경)
+                        ctx.beginPath();
+                        ctx.arc(drop.x, drop.y, drop.radius, 0, Math.PI * 2);
+                        ctx.fillStyle = 'yellow'; // 클릭된 공의 색상 변경
+                        ctx.fill();
+
+                        // 공의 움직임 멈추기 (선택적으로 추가 가능)
+                        drop.xOffset = 0;
+                        drop.yOffset = 0;
+                    }
                 }
             });
         });
