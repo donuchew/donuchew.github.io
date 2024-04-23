@@ -118,6 +118,8 @@
             }
 
             if (audioContext && audioContext.state === 'running') {
+                const dataArray = new Uint8Array(analyser.frequencyBinCount); 
+
                 analyser.getByteFrequencyData(dataArray);
                 const averageFrequency = dataArray.reduce((a, b) => a + b, 0) / bufferLength;
 
