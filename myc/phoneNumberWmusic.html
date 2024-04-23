@@ -40,7 +40,7 @@
         }
 
         canvas {
-            border: 0px solid white;
+            border: 1px solid black; /* 테두리 색상 검은색 */
         }
     </style>
 </head>
@@ -181,48 +181,56 @@
             const clickX = event.clientX;
             const clickY = event.clientY;
 
+            let clickedDrop = null;
+
             // 공을 클릭했을 때
             drops.forEach((drop) => {
                 if (drop.visible) { // 보이는 공만 처리
                     const distance = Math.sqrt((clickX - drop.x) ** 2 + (clickY - drop.y) ** 2);
 
                     if (distance <= drop.radius) {
-                        // '!'를 클릭한 경우
-                        if (drop.text === '!') {
-                            //시간체크 
-                            endTime = Date.now() - startTime;
-
-                            const elapsedTime = Math.floor((endTime) / 1000); // 밀리초를 초 단위로 변환
-                            const minutes = Math.floor(elapsedTime / 60);
-                            const seconds = elapsedTime % 60;
-                            const formattedTime = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
-                            const message = `Time: ${formattedTime}`;
-                          
-                            const confirmation = confirm('Your Phone Number: ' + inputText.value + '.\n' + message+'  \nRetry?');
-                            if (confirmation) {
-                                inputText.value = ''; // input 창 리셋
-                                startTime = Date.now();
-                            }
-                        } else {
-                            // '!' 이외의 문자를 클릭한 경우, 문자를 누적하여 inputText에 표시
-                            inputText.value += drop.text;
+                        if (!clickedDrop || drop.y < clickedDrop.y) {
+                            clickedDrop = drop;
                         }
-
-                        // 공 숨김
-                        drop.visible = false;
-
-                        // 해당 공의 색 변경
-                        ctx.beginPath();
-                        ctx.arc(drop.x, drop.y, drop.radius, 0, Math.PI * 2);
-                        ctx.fillStyle = 'yellow'; 
-                        ctx.fill();
-
-                        // 공의 움직임 멈춤
-                        drop.xOffset = 0;
-                        drop.yOffset = 0;
                     }
                 }
             });
+
+            if (clickedDrop) {
+                // '!'를 클릭한 경우
+                if (clickedDrop.text === '!') {
+                    // 시간 체크
+                    endTime = Date.now() - startTime;
+
+                    const elapsedTime = Math.floor((endTime) / 1000); // 밀리초를 초 단위로 변환
+                    const minutes = Math.floor(elapsedTime / 60);
+                    const seconds = elapsedTime % 60;
+                    const formattedTime = `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+                    const message = `Time: ${formattedTime}`;
+
+                    const confirmation = confirm('Your Phone Number: ' + inputText.value + '.\n' + message + '\nRetry?');
+                    if (confirmation) {
+                        inputText.value = ''; // input 창 리셋
+                        startTime = Date.now();
+                    }
+                } else {
+                    // '!' 이외의 문자를 클릭한 경우, 문자를 누적하여 inputText에 표시
+                    inputText.value = clickedDrop.text; // 가장 위에 있는 공의 값만 입력
+                }
+
+                // 공 숨김
+                clickedDrop.visible = false;
+
+                // 해당 공의 색 변경
+                ctx.beginPath();
+                ctx.arc(clickedDrop.x, clickedDrop.y, clickedDrop.radius, 0, Math.PI * 2);
+                ctx.fillStyle = 'yellow';
+                ctx.fill();
+
+                // 공의 움직임 멈춤
+                clickedDrop.xOffset = 0;
+                clickedDrop.yOffset = 0;
+            }
 
             // inputText의 내용을 누적하여 보여주기 위해 해당 코드를 추가
             inputText.focus(); // input 요소에 포커스를 맞춤
