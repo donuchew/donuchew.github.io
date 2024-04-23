@@ -59,6 +59,7 @@
         <source src="https://donuchew.github.io/media/password-infinity.mp3" type="audio/mpeg"> 
     </audio>
 
+    
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const canvas = document.getElementById('canvas');
@@ -72,6 +73,17 @@
 
             const NUM_OF_DROPS = 30;
             let drops = [];
+
+            // Create audio context
+            const audioContext = new AudioContext();
+            const audioElement = document.getElementById('bgMusic');
+            const source = audioContext.createMediaElementSource(audioElement);
+            const analyser = audioContext.createAnalyser();
+            source.connect(analyser);
+            analyser.connect(audioContext.destination);
+
+            const bufferLength = analyser.frequencyBinCount;
+            const dataArray = new Uint8Array(bufferLength);
 
             function createDrops() {
                 for (let i = 0; i < NUM_OF_DROPS; i++) {
@@ -97,6 +109,9 @@
                 ctx.font = '20px Arial';
                 ctx.textBaseline = 'middle';
 
+                analyser.getByteFrequencyData(dataArray);
+                const averageFrequency = dataArray.reduce((a, b) => a + b, 0) / bufferLength;
+
                 drops.forEach((drop) => {
                     if (drop.visible && drop.character !== undefined) {
                         const textWidth = ctx.measureText(drop.character).width;
@@ -117,8 +132,8 @@
                     }
 
                     // Update drop position based on offsets (simulate wave-like movement)
-                    drop.x += drop.xOffset;
-                    drop.y += drop.yOffset;
+                    drop.x += drop.xOffset * (averageFrequency / 50); // Adjust speed based on frequency
+                    drop.y += drop.yOffset * (averageFrequency / 50); // Adjust speed based on frequency
 
                     // Bounce off the walls
                     if (drop.x < 0 || drop.x > canvas.width) {
