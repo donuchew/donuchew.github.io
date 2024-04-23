@@ -49,7 +49,7 @@
     </div>
 
     <div class="phonenumresult">
-        <p>Enter Phone Number(000-0000-0000)</p>
+        <p>Enter Phone Number (000-0000-0000)</p>
         <div class="inputContainer">
             <input type="text" id="inputText" readonly>
         </div>
@@ -59,7 +59,6 @@
         <source src="https://donuchew.github.io/media/password-infinity.mp3" type="audio/mpeg"> 
     </audio>
 
-    
     <script>
         document.addEventListener('DOMContentLoaded', function() {
             const canvas = document.getElementById('canvas');
@@ -106,7 +105,6 @@
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
 
                 ctx.fillStyle = 'white';
-                ctx.font = '20px Arial';
                 ctx.textBaseline = 'middle';
 
                 analyser.getByteFrequencyData(dataArray);
@@ -114,6 +112,7 @@
 
                 drops.forEach((drop) => {
                     if (drop.visible && drop.character !== undefined) {
+                        const radius = 15 + (averageFrequency / 100); // Adjust radius based on frequency
                         const textWidth = ctx.measureText(drop.character).width;
                         const textHeight = parseInt(ctx.font);
 
@@ -122,7 +121,7 @@
 
                         // Draw red circle (filled) for each drop
                         ctx.beginPath();
-                        ctx.arc(drop.x, drop.y, 25, 0, Math.PI * 2);
+                        ctx.arc(drop.x, drop.y, radius, 0, Math.PI * 2);
                         ctx.fillStyle = 'red';
                         ctx.fill();
 
@@ -180,10 +179,6 @@
             createDrops();
             draw();
         });
-    </script>
-</body>
-</html>
-
     </script>
 </body>
 </html>
