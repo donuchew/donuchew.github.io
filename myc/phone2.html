@@ -109,7 +109,7 @@
         function draw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-            if (audioContext.state === 'suspended') {
+            if (audioContext && audioContext.state === 'suspended') {
                 toggleMusic.addEventListener('click', function() {
                     audioContext.resume().then(() => {
                         console.log('Audio context resumed.');
@@ -117,7 +117,7 @@
                 });
             }
 
-            if (audioContext.state === 'running') {
+            if (audioContext && audioContext.state === 'running') {
                 analyser.getByteFrequencyData(dataArray);
                 const averageFrequency = dataArray.reduce((a, b) => a + b, 0) / bufferLength;
 
