@@ -14,7 +14,7 @@
             background-color: black;
             color: white;
             font-family: Arial, sans-serif;
-            overflow: hidden; /* Hide overflow to keep balls within screen */
+            overflow: hidden;
         }
 
         .phonenumresult {
@@ -23,7 +23,7 @@
             left: 50%;
             transform: translate(-50%, -50%);
             text-align: center;
-            padding: 20px; /* 내부 패딩 */
+            padding: 20px;
             cursor: pointer;
         }
 
@@ -67,12 +67,11 @@
         const toggleMusic = document.getElementById('toggleMusic');
         const bgMusic = document.getElementById('bgMusic');
 
-        // Set canvas size
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
 
         const NUM_OF_DROPS = 50;
-        let drops = []; 
+        let drops = [];
         let audioContext = null;
         let analyser = null;
         let bufferLength = 0;
@@ -83,28 +82,18 @@
             analyser = audioContext.createAnalyser();
             source.connect(analyser);
             analyser.connect(audioContext.destination);
-
-            // Set bufferLength based on analyser's frequencyBinCount
             bufferLength = analyser.frequencyBinCount;
         }
 
         function createDrops() {
             for (let i = 0; i < NUM_OF_DROPS; i++) {
-                const character = Math.random() < 0.8 ? Math.floor(Math.random() * 10).toString() : '-';
-                const speed = Math.random() * 5 + 2; // Random speed between 2 and 7
-                const xOffset = Math.random() * 4 - 2; // Random x offset (-2 to 2)
-                const yOffset = Math.random() * 4 - 2; // Random y offset (-2 to 2)
-                const radius = 15; // Initial radius
-
                 drops.push({
                     x: Math.random() * canvas.width,
                     y: Math.random() * canvas.height,
-                    speed: speed,
-                    character: character,
-                    visible: true,
-                    xOffset: xOffset,
-                    yOffset: yOffset,
-                    radius: radius
+                    speed: Math.random() * 5 + 2,
+                    xOffset: Math.random() * 4 - 2,
+                    yOffset: Math.random() * 4 - 2,
+                    radius: 15
                 });
             }
         }
@@ -121,35 +110,24 @@
             }
 
             if (audioContext && audioContext.state === 'running') {
-                const dataArray = new Uint8Array(analyser.frequencyBinCount); 
-
+                const dataArray = new Uint8Array(bufferLength);
                 analyser.getByteFrequencyData(dataArray);
                 const averageFrequency = dataArray.reduce((a, b) => a + b, 0) / bufferLength;
 
                 drops.forEach((drop) => {
-                    if (drop.visible && drop.character !== undefined) {
-                        // Draw red circle (filled) for each drop
-                        ctx.beginPath();
-                        ctx.arc(drop.x, drop.y, drop.radius, 0, Math.PI * 2);
-                        ctx.fillStyle = 'red';
-                        ctx.fill();
+                    ctx.beginPath();
+                    ctx.arc(drop.x, drop.y, drop.radius * (averageFrequency / 100), 0, Math.PI * 2);
+                    ctx.fillStyle = 'red';
+                    ctx.fill();
 
-                        // Draw the character in white inside the circle
-                        ctx.fillStyle = 'white';
-                        const textWidth = ctx.measureText(drop.character).width;
-                        ctx.fillText(drop.character, drop.x - textWidth / 2, drop.y);
-                    }
+                    drop.x += drop.xOffset * (averageFrequency / 20);
+                    drop.y += drop.yOffset * (averageFrequency / 20);
 
-                    // Update drop position based on offsets and music speed
-                    drop.x += drop.xOffset * (averageFrequency / 20); // Adjust x based on average frequency
-                    drop.y += drop.yOffset * (averageFrequency / 20); // Adjust y based on average frequency
-
-                    // Bounce off the walls
                     if (drop.x < drop.radius || drop.x > canvas.width - drop.radius) {
-                        drop.xOffset *= -1; // Reverse x direction
+                        drop.xOffset *= -1;
                     }
                     if (drop.y < drop.radius || drop.y > canvas.height - drop.radius) {
-                        drop.yOffset *= -1; // Reverse y direction
+                        drop.yOffset *= -1;
                     }
                 });
             }
@@ -157,10 +135,14 @@
             requestAnimationFrame(draw);
         }
 
-        // Start animation and create audio context
         createDrops();
         draw();
         createAudioContext();
+
+        toggleMusic.addEventListener('click', function() {
+            bgMusic.play();
+            toggleMusic.style.display = 'none'; // Hide the toggle button once music starts
+        });
     });
 </script>
 </body>
