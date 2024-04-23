@@ -215,7 +215,7 @@
                     }
                 } else {
                     // '!' 이외의 문자를 클릭한 경우, 문자를 누적하여 inputText에 표시
-                    inputText.value = clickedDrop.text; // 가장 위에 있는 공의 값만 입력
+                    inputText.value += clickedDrop.text; // 가장 위에 있는 공의 값만 입력
                 }
 
                 // 공 숨김
