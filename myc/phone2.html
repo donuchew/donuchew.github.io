@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Raining Numbers with Music</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: black;
+            color: white;
+            font-family: Arial, sans-serif;
+        }
+
+        .phonenumresult {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            padding: 20px; /* 내부 패딩 */ 
+        }
+
+        .inputContainer {
+            margin-top: 20px;
+        }
+
+        input {
+            width: 300px;
+            height: 30px;
+            font-size: 16px;
+            text-align: center;
+        }
+
+        canvas {
+            border: 1px solid white;
+            cursor: default;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <canvas id="canvas"></canvas>
+    </div>
+
+    <div class="phonenumresult">
+        <p>Enter Phone Number(000-0000-0000)</p>
+        <div class="inputContainer">
+            <input type="text" id="inputText" readonly>
+        </div>
+    </div>
+
+    <audio id="bgMusic" autoplay loop>
+        <source src="/media/password-infinity.mp3" type="audio/mpeg"> 
+    </audio>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const canvas = document.getElementById('canvas');
+            const ctx = canvas.getContext('2d');
+            const inputText = document.getElementById('inputText');
+            const bgMusic = document.getElementById('bgMusic');
+
+            // Set canvas size
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+
+            const NUM_OF_DROPS = 30;
+            let drops = [];
+
+            function createDrops() {
+                for (let i = 0; i < NUM_OF_DROPS; i++) {
+                    const character = Math.random() < 0.8 ? Math.floor(Math.random() * 10).toString() : '-';
+                    const speed = Math.random() * 3 + 1; // Random speed between 1 and 4
+
+                    drops.push({
+                        x: Math.random() * canvas.width,
+                        y: Math.random() * canvas.height,
+                        speed: speed,
+                        character: character,
+                        visible: true,
+                        xOffset: Math.random() * 2 - 1, // Random x offset (-1 to 1)
+                        yOffset: Math.random() * 2 - 1 // Random y offset (-1 to 1)
+                    });
+                }
+            }
+
+            function draw() {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                ctx.fillStyle = 'white';
+                ctx.font = '20px Arial';
+                ctx.textBaseline = 'middle';
+
+                drops.forEach((drop) => {
+                    if (drop.visible && drop.character !== undefined) {
+                        const textWidth = ctx.measureText(drop.character).width;
+                        const textHeight = parseInt(ctx.font);
+
+                        const dropLeft = drop.x - textWidth / 2;
+                        const dropTop = drop.y - textHeight / 2;
+
+                        // Draw red circle (filled) for each drop
+                        ctx.beginPath();
+                        ctx.arc(drop.x, drop.y, 25, 0, Math.PI * 2);
+                        ctx.fillStyle = 'red';
+                        ctx.fill();
+
+                        // Draw the character in white inside the circle
+                        ctx.fillStyle = 'white';
+                        ctx.fillText(drop.character, dropLeft, dropTop);
+                    }
+
+                    // Update drop position based on offsets (simulate wave-like movement)
+                    drop.x += drop.xOffset;
+                    drop.y += drop.yOffset;
+
+                    // Boundary check
+                    if (drop.x < 0 || drop.x > canvas.width || drop.y > canvas.height) {
+                        drop.x = Math.random() * canvas.width;
+                        drop.y = -20;
+                        drop.character = Math.random() < 0.8 ? Math.floor(Math.random() * 10).toString() : '-';
+                        drop.visible = true;
+                        drop.speed = Math.random() * 3 + 1;
+                        drop.xOffset = Math.random() * 2 - 1;
+                        drop.yOffset = Math.random() * 2 - 1;
+                    }
+                });
+
+                requestAnimationFrame(draw);
+            }
+
+            canvas.addEventListener('click', function(event) {
+                const mouseX = event.clientX;
+                const mouseY = event.clientY;
+
+                drops.forEach((drop) => {
+                    const textWidth = ctx.measureText(drop.character).width;
+                    const textHeight = parseInt(ctx.font);
+                    const dropLeft = drop.x - textWidth / 2;
+                    const dropTop = drop.y - textHeight / 2;
+
+                    const dx = mouseX - drop.x;
+                    const dy = mouseY - drop.y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance <= 25 && drop.visible && drop.character !== undefined) {
+                        if (inputText.value.length < 13) {
+                            inputText.value += drop.character;
+                            drop.visible = false;
+                        }
+                        if (inputText.value.length === 13) {
+                            const resetInput = confirm(`Your Phone Number: ${inputText.value}\n다시 입력하시겠습니까?`);
+                            if (resetInput) {
+                                inputText.value = '';
+                            }
+                        }
+                    }
+                });
+            });
+
+            // Start animation
+            createDrops();
+            draw();
+        });
+    </script>
+</body>
+</html>
