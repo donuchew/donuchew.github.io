@@ -23,7 +23,8 @@
             left: 50%;
             transform: translate(-50%, -50%);
             text-align: center;
-            padding: 20px; /* 내부 패딩 */ 
+            padding: 20px; /* 내부 패딩 */
+            cursor: pointer;
         }
 
         .inputContainer {
@@ -39,185 +40,120 @@
 
         canvas {
             border: 1px solid white;
-            cursor: default;
-        }
-
-        #musicControls {
-            position: fixed;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            display: flex;
-            align-items: center;
-        }
-
-        button {
-            margin: 0 10px;
-            padding: 10px 20px;
-            font-size: 16px;
-            background-color: #007bff;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <canvas id="canvas"></canvas>
+<div class="container">
+    <canvas id="canvas"></canvas>
+</div>
+
+<div class="phonenumresult" id="toggleMusic">
+    <p>Enter Phone Number(000-0000-0000)</p>
+    <div class="inputContainer">
+        <input type="text" id="inputText" readonly>
     </div>
+</div>
 
-    <div class="phonenumresult">
-        <p>Enter Phone Number(000-0000-0000)</p>
-        <div class="inputContainer">
-            <input type="text" id="inputText" readonly>
-        </div>
-    </div>
+<audio id="bgMusic" autoplay loop>
+    <source src="https://donuchew.github.io/media/password-infinity.mp3" type="audio/mpeg">
+</audio>
 
-    <div id="musicControls">
-        <button id="playBtn">Play</button>
-        <button id="pauseBtn">Pause</button>
-        <button id="stopBtn">Stop</button>
-    </div>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const inputText = document.getElementById('inputText');
+        const toggleMusic = document.getElementById('toggleMusic');
+        const bgMusic = document.getElementById('bgMusic');
 
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const canvas = document.getElementById('canvas');
-            const ctx = canvas.getContext('2d');
-            const inputText = document.getElementById('inputText');
+        // Set canvas size
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
 
-            // Set canvas size
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+        const NUM_OF_DROPS = 50;
+        let drops = [];
 
-            const NUM_OF_DROPS = 30;
-            let drops = [];
+        // Create audio context and connect to the music source
+        const audioContext = new AudioContext();
+        const source = audioContext.createMediaElementSource(bgMusic);
+        const analyser = audioContext.createAnalyser();
+        source.connect(analyser);
+        analyser.connect(audioContext.destination);
 
-            function createDrops() {
-                for (let i = 0; i < NUM_OF_DROPS; i++) {
-                    const character = Math.random() < 0.8 ? Math.floor(Math.random() * 10).toString() : '-';
-                    const speed = Math.random() * 3 + 1; // Random speed between 1 and 4
+        // Set up array to hold frequency data
+        const bufferLength = analyser.frequencyBinCount;
+        const dataArray = new Uint8Array(bufferLength);
 
-                    drops.push({
-                        x: Math.random() * canvas.width,
-                        y: Math.random() * canvas.height,
-                        speed: speed,
-                        character: character,
-                        visible: true,
-                        xOffset: Math.random() * 2 - 1, // Random x offset (-1 to 1)
-                        yOffset: Math.random() * 2 - 1 // Random y offset (-1 to 1)
-                    });
-                }
-            }
+        function createDrops() {
+            for (let i = 0; i < NUM_OF_DROPS; i++) {
+                const character = Math.random() < 0.8 ? Math.floor(Math.random() * 10).toString() : '-';
+                const speed = Math.random() * 5 + 2; // Random speed between 2 and 7
+                const xOffset = Math.random() * 4 - 2; // Random x offset (-2 to 2)
+                const yOffset = Math.random() * 4 - 2; // Random y offset (-2 to 2)
+                const radius = 15; // Initial radius
 
-            function draw() {
-                ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-                ctx.fillStyle = 'white';
-                ctx.font = '20px Arial';
-                ctx.textBaseline = 'middle';
-
-                drops.forEach((drop) => {
-                    if (drop.visible && drop.character !== undefined) {
-                        const textWidth = ctx.measureText(drop.character).width;
-                        const textHeight = parseInt(ctx.font);
-
-                        const dropLeft = drop.x - textWidth / 2;
-                        const dropTop = drop.y - textHeight / 2;
-
-                        // Draw red circle (filled) for each drop
-                        ctx.beginPath();
-                        ctx.arc(drop.x, drop.y, 25, 0, Math.PI * 2);
-                        ctx.fillStyle = 'red';
-                        ctx.fill();
-
-                        // Draw the character in white inside the circle
-                        ctx.fillStyle = 'white';
-                        ctx.fillText(drop.character, dropLeft, dropTop);
-                    }
-
-                    // Update drop position based on offsets (simulate wave-like movement)
-                    drop.x += drop.xOffset * (audioElement.currentTime / 10); // Adjust x based on current time
-                    drop.y += drop.yOffset * (audioElement.currentTime / 10); // Adjust y based on current time
-
-                    // Bounce off the walls
-                    if (drop.x < 0 || drop.x > canvas.width) {
-                        drop.xOffset *= -1; // Reverse x direction
-                    }
-                    if (drop.y < 0 || drop.y > canvas.height) {
-                        drop.yOffset *= -1; // Reverse y direction
-                    }
+                drops.push({
+                    x: Math.random() * canvas.width,
+                    y: Math.random() * canvas.height,
+                    speed: speed,
+                    character: character,
+                    visible: true,
+                    xOffset: xOffset,
+                    yOffset: yOffset,
+                    radius: radius
                 });
-
-                requestAnimationFrame(draw);
             }
+        }
 
-            canvas.addEventListener('click', function(event) {
-                const mouseX = event.clientX;
-                const mouseY = event.clientY;
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-                drops.forEach((drop) => {
+            analyser.getByteFrequencyData(dataArray);
+            const averageFrequency = dataArray.reduce((a, b) => a + b, 0) / bufferLength;
+
+            drops.forEach((drop) => {
+                if (drop.visible && drop.character !== undefined) {
+                    // Draw red circle (filled) for each drop
+                    ctx.beginPath();
+                    ctx.arc(drop.x, drop.y, drop.radius, 0, Math.PI * 2);
+                    ctx.fillStyle = 'red';
+                    ctx.fill();
+
+                    // Draw the character in white inside the circle
+                    ctx.fillStyle = 'white';
                     const textWidth = ctx.measureText(drop.character).width;
-                    const textHeight = parseInt(ctx.font);
-                    const dropLeft = drop.x - textWidth / 2;
-                    const dropTop = drop.y - textHeight / 2;
+                    ctx.fillText(drop.character, drop.x - textWidth / 2, drop.y);
+                }
 
-                    const dx = mouseX - drop.x;
-                    const dy = mouseY - drop.y;
-                    const distance = Math.sqrt(dx * dx + dy * dy);
+                // Update drop position based on offsets and music speed
+                drop.x += drop.xOffset * (averageFrequency / 20); // Adjust x based on average frequency
+                drop.y += drop.yOffset * (averageFrequency / 20); // Adjust y based on average frequency
 
-                    if (distance <= 25 && drop.visible && drop.character !== undefined) {
-                        if (inputText.value.length < 13) {
-                            inputText.value += drop.character;
-                            drop.visible = false;
-                        }
-                        if (inputText.value.length === 13) {
-                            const resetInput = confirm(`Your Phone Number: ${inputText.value}\n다시 입력하시겠습니까?`);
-                            if (resetInput) {
-                                inputText.value = '';
-                            }
-                        }
-                    }
-                });
-            });
-
-            // Music controls
-            const audioElement = document.createElement('audio');
-            audioElement.src = 'https://donuchew.github.io/media/password-infinity.mp3';
-            document.body.appendChild(audioElement);
-
-            const playBtn = document.getElementById('playBtn');
-            const pauseBtn = document.getElementById('pauseBtn');
-            const stopBtn = document.getElementById('stopBtn');
-
-            playBtn.addEventListener('click', () => {
-                audioElement.play();
-            });
-
-            pauseBtn.addEventListener('click', () => {
-                audioElement.pause();
-            });
-
-            stopBtn.addEventListener('click', () => {
-                audioElement.pause();
-                audioElement.currentTime = 0;
-            });
-
-            // Start animation after user gesture
-            document.addEventListener('click', () => {
-                audioElement.play();
-                createDrops();
-                draw();
-            }, { once: true }); // Listen for click event once
-
-            // Handle audio context resume
-            document.addEventListener('keydown', () => {
-                if (audioContext.state === 'suspended') {
-                    audioContext.resume();
+                // Bounce off the walls
+                if (drop.x < drop.radius || drop.x > canvas.width - drop.radius) {
+                    drop.xOffset *= -1; // Reverse x direction
+                }
+                if (drop.y < drop.radius || drop.y > canvas.height - drop.radius) {
+                    drop.yOffset *= -1; // Reverse y direction
                 }
             });
+
+            requestAnimationFrame(draw);
+        }
+
+        toggleMusic.addEventListener('click', function() {
+            if (bgMusic.paused) {
+                bgMusic.play();
+            } else {
+                bgMusic.pause();
+            }
         });
-    </script>
+
+        // Start animation
+        createDrops();
+        draw();
+    });
+</script>
 </body>
 </html>
