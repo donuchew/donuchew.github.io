@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>디시인사이드 갤러리</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            line-height: 1.6;
+        }
+
+        .container {
+            width: 90%;
+            max-width: 1000px;
+            margin: 20px auto;
+            background: white;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 10px;
+            margin-bottom: 10px;
+        }
+
+        .header .title {
+            font-size: 24px;
+            font-weight: bold;
+        }
+
+        .header .info {
+            color: #777;
+            font-size: 14px;
+        }
+
+        .content {
+            margin-top: 20px;
+            font-size: 16px;
+            line-height: 1.8;
+        }
+
+        .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #ccc;
+            color: #555;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        .comments {
+            margin-top: 40px;
+        }
+
+        .comments .comment {
+            border-top: 1px solid #ddd;
+            padding-top: 10px;
+            padding-bottom: 10px;
+        }
+
+        .comments .comment .comment-header {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .comments .comment .comment-body {
+            margin-left: 20px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="title">디시인사이드 글 제목</div>
+            <div class="info">
+                작성자: 익명<br>
+                날짜: 2024-08-12 12:00:00<br>
+                조회수: 1234
+            </div>
+        </div>
+
+        <div class="content">
+            <p>
+                여기에는 본문 내용이 들어갑니다. 본문은 여러 줄일 수 있으며, 다양한 정보를 포함할 수 있습니다.
+                예를 들어, 텍스트, 이미지, 링크 등이 포함될 수 있습니다. 이 예시는 디시인사이드의 게시글을
+                보여주는 형식으로 제작되었습니다.
+            </p>
+            <p>
+                두 번째 문단입니다. 디시인사이드의 게시글은 커뮤니티의 성격에 따라 매우 다양할 수 있습니다.
+                이 페이지는 그러한 게시글의 스타일을 단순히 재현한 예제입니다.
+            </p>
+        </div>
+
+        <div class="footer">
+            © 2024 디시인사이드 갤러리 예제
+        </div>
+
+        <div class="comments">
+            <div class="comment">
+                <div class="comment-header">익명 2024-08-12 12:05:00</div>
+                <div class="comment-body">
+                    첫 번째 댓글입니다. 댓글은 간단한 텍스트일 수 있으며, 사용자 간의 소통을 위해 사용됩니다.
+                </div>
+            </div>
+            <div class="comment">
+                <div class="comment-header">익명 2024-08-12 12:10:00</div>
+                <div class="comment-body">
+                    두 번째 댓글입니다. 댓글이 많아질수록 페이지가 길어질 수 있습니다.
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
