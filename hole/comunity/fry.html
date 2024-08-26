@@ -82,11 +82,11 @@
 
         function createBubbles() {
             for (let i = 0; i < NUM_OF_BUBBLES; i++) {
-                const radius = Math.random() * 4 + 2;
+                const radius = Math.random() * 10 + 5;
                 const x = Math.random() * (canvas.width - 2 * radius) + radius;
                 const y = Math.random() * (canvas.height - 2 * radius) + radius;
-                const speedX = (Math.random() - 0.5) * 20;
-                const speedY = (Math.random() - 0.5) * 20;
+                const speedX = (Math.random() - 0.5) * 10;
+                const speedY = (Math.random() - 0.5) * 10;
                 const color = `rgba(185, 130, 30, ${Math.random() * 0.8 + 0.2})`;
 
                 bubbles.push(new Bubble(x, y, radius, speedX, speedY, color));
