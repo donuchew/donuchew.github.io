@@ -17,7 +17,7 @@
 
         canvas {
             display: block;
-            background-color: #fbbba9;
+            background-color: #f9e393;
         }
     </style>
 </head>
@@ -87,7 +87,7 @@
                 const y = Math.random() * (canvas.height - 2 * radius) + radius;
                 const speedX = (Math.random() - 0.5) * 20;
                 const speedY = (Math.random() - 0.5) * 20;
-                const color = `rgba(130, 100, 50, ${Math.random() * 0.8 + 0.2})`;
+                const color = `rgba(185, 130, 30, ${Math.random() * 0.8 + 0.2})`;
 
                 bubbles.push(new Bubble(x, y, radius, speedX, speedY, color));
             }
