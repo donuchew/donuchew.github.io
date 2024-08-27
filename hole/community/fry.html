@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bubbling Oil Drops</title>
+    <style>
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #333;
+            overflow: hidden;
+        }
+
+        canvas {
+            display: block;
+            background-color: #f9e393;
+        }
+    </style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const NUM_OF_BUBBLES = 300;
+        const bubbles = [];
+
+        class Bubble {
+            constructor(x, y, radius, speedX, speedY, color) {
+                this.x = x;
+                this.y = y;
+                this.radius = radius;
+                this.speedX = speedX;
+                this.speedY = speedY;
+                this.color = color;
+            }
+
+            draw() {
+                ctx.beginPath();
+                ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+                ctx.fillStyle = this.color;
+                ctx.fill();
+            }
+
+            update() {
+                this.x += this.speedX;
+                this.y += this.speedY;
+
+                if (this.x + this.radius > canvas.width || this.x - this.radius < 0) {
+                    this.speedX *= -1;
+                }
+
+                if (this.y + this.radius > canvas.height || this.y - this.radius < 0) {
+                    this.speedY *= -1;
+                }
+
+                for (let i = 0; i < bubbles.length; i++) {
+                    if (this === bubbles[i]) continue;
+                    const dx = this.x - bubbles[i].x;
+                    const dy = this.y - bubbles[i].y;
+                    const distance = Math.sqrt(dx * dx + dy * dy);
+
+                    if (distance < this.radius + bubbles[i].radius) {
+                        this.speedX *= -1;
+                        this.speedY *= -1;
+                        bubbles[i].speedX *= -1;
+                        bubbles[i].speedY *= -1;
+                    }
+                }
+            }
+        }
+
+        function createBubbles() {
+            for (let i = 0; i < NUM_OF_BUBBLES; i++) {
+                const radius = Math.random() * 10 + 5;
+                const x = Math.random() * (canvas.width - 2 * radius) + radius;
+                const y = Math.random() * (canvas.height - 2 * radius) + radius;
+                const speedX = (Math.random() - 0.5) * 10;
+                const speedY = (Math.random() - 0.5) * 10;
+                const color = `rgba(185, 130, 30, ${Math.random() * 0.8 + 0.2})`;
+
+                bubbles.push(new Bubble(x, y, radius, speedX, speedY, color));
+            }
+        }
+
+        function animate() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            bubbles.forEach(bubble => {
+                bubble.update();
+                bubble.draw();
+            });
+
+            requestAnimationFrame(animate);
+        }
+
+        createBubbles();
+        animate();
+
+        window.addEventListener('resize', function() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        });
+    });
+</script>
+</body>
+</html>
