@@ -38,7 +38,7 @@
             };
 
             // Set random movement speeds and directions
-            model.movementSpeed = 0.1; // Movement speed
+            model.movementSpeed = 0.2; // Faster movement speed
             model.movementDirection = new THREE.Vector2(
                 Math.random() * 2 - 1, // Random direction between -1 and 1
                 Math.random() * 2 - 1
@@ -86,13 +86,12 @@
                 // Bounce off walls
                 if (model.position.x <= model.boundaries.xMin || model.position.x >= model.boundaries.xMax) {
                     model.movementDirection.x *= -1; // Reverse x direction
+                    model.position.x = Math.max(model.boundaries.xMin, Math.min(model.position.x, model.boundaries.xMax));
                 }
                 if (model.position.y <= model.boundaries.yMin || model.position.y >= model.boundaries.yMax) {
                     model.movementDirection.y *= -1; // Reverse y direction
+                    model.position.y = Math.max(model.boundaries.yMin, Math.min(model.position.y, model.boundaries.yMax));
                 }
-
-                // Update camera position based on model
-                camera.position.z = Math.max(5, Math.abs(model.position.z) + 5);
             }
 
             renderer.render(scene, camera);
