@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Floating Ginger</title>
+    <style>
+        body { margin: 0; overflow: hidden; }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three/examples/js/loaders/GLTFLoader.js"></script>
+    <script>
+        const scene = new THREE.Scene();
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const renderer = new THREE.WebGLRenderer();
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        document.body.appendChild(renderer.domElement);
+
+        // Load the GLB model
+        const loader = new THREE.GLTFLoader();
+        let model;
+
+        loader.load('testgingerman.glb', (gltf) => {
+            model = gltf.scene;
+            scene.add(model);
+            model.scale.set(1, 1, 1); // Scale the model if needed
+            model.position.set(0, 0, 0);
+        }, undefined, (error) => {
+            console.error('An error happened:', error);
+        });
+
+        // Create a directional light
+        const light = new THREE.DirectionalLight(0xffffff, 1);
+        light.position.set(5, 5, 5);
+        scene.add(light);
+
+        // Add ambient light
+        const ambientLight = new THREE.AmbientLight(0x404040); // soft white light
+        scene.add(ambientLight);
+
+        camera.position.z = 5;
+
+        // Movement variables
+        const velocity = new THREE.Vector3();
+        const direction = new THREE.Vector3();
+        const speed = 0.05;
+
+        // Animation loop
+        function animate() {
+            requestAnimationFrame(animate);
+
+            if (model) {
+                // Apply velocity to the model's position
+                model.position.add(velocity);
+
+                // Bounce off walls
+                if (model.position.x > window.innerWidth / 2 || model.position.x < -window.innerWidth / 2) {
+                    velocity.x *= -1;
+                }
+                if (model.position.y > window.innerHeight / 2 || model.position.y < -window.innerHeight / 2) {
+                    velocity.y *= -1;
+                }
+                if (model.position.z > 10 || model.position.z < -10) {
+                    velocity.z *= -1;
+                }
+
+                // Apply a small random motion
+                direction.set(
+                    (Math.random() - 0.5) * speed,
+                    (Math.random() - 0.5) * speed,
+                    (Math.random() - 0.5) * speed
+                );
+                velocity.add(direction);
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Resize handler
+        window.addEventListener('resize', () => {
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+        });
+    </script>
+</body>
+</html>
