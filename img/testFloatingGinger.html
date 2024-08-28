@@ -55,8 +55,9 @@
             requestAnimationFrame(animate);
 
             if (model) {
-                // Update model position
+                // Update model position, restricting Z movement
                 model.position.add(velocity);
+                model.position.z = 0; // Keep model on the same Z plane
 
                 // Bounce off walls
                 if (model.position.x > window.innerWidth / 2 || model.position.x < -window.innerWidth / 2) {
@@ -69,15 +70,20 @@
                 // Keep model within bounds
                 model.position.x = Math.max(-window.innerWidth / 2, Math.min(window.innerWidth / 2, model.position.x));
                 model.position.y = Math.max(-window.innerHeight / 2, Math.min(window.innerHeight / 2, model.position.y));
-            }
 
-            // Apply random movement
-            direction.set(
-                (Math.random() - 0.5) * speed,
-                (Math.random() - 0.5) * speed,
-                0 // For a 2D effect, keeping Z-axis movement minimal
-            );
-            velocity.add(direction);
+                // Apply random movement
+                direction.set(
+                    (Math.random() - 0.5) * speed,
+                    (Math.random() - 0.5) * speed,
+                    0 // Keep Z movement minimal
+                );
+                velocity.add(direction);
+
+                // Rotate the model
+                model.rotation.x += 0.01;
+                model.rotation.y += 0.01;
+                model.rotation.z += 0.01;
+            }
 
             renderer.render(scene, camera);
         }
