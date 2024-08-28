@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DONUT PARTY!</title>
+    <title>Bubbling Oil Drops with 3D Model</title>
     <style>
         body {
             margin: 0;
@@ -27,7 +27,6 @@
 <!-- three.js 라이브러리 및 GLTFLoader 추가 -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three/examples/js/loaders/GLTFLoader.js"></script>
-    
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -123,7 +122,7 @@
         const loader = new THREE.GLTFLoader();
         let model;
 
-        loader.load('https://donuchew.github.io/img/testgingerman.glb', function(gltf) {
+        loader.load('../../img/testgingerman,glb', function(gltf) {
             model = gltf.scene;
             model.position.set(Math.random() * 10 - 5, Math.random() * 10 - 5, 0);
             model.scale.set(0.1, 0.1, 0.1); // 모델 크기 조정
