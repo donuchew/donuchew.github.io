@@ -27,14 +27,29 @@
         loader.load('https://donuchew.github.io/img/testgingerman.glb', (gltf) => {
             model = gltf.scene;
             scene.add(model);
-            model.scale.set(5, 5, 5); // Adjust scale if needed
+            model.scale.set(1, 1, 1); // Adjust scale if needed
             model.position.set(0, 0, 0); // Center the model
 
             // Set random rotation speeds
             model.rotationSpeeds = {
-                x: Math.random() * 0.02 - 0.01, // Random speed between -0.01 and 0.01
+                x: Math.random() * 0.02 - 0.01,
                 y: Math.random() * 0.02 - 0.01,
                 z: Math.random() * 0.02 - 0.01
+            };
+
+            // Set random movement speeds and directions
+            model.movementSpeed = 0.1; // Movement speed
+            model.movementDirection = new THREE.Vector2(
+                Math.random() * 2 - 1, // Random direction between -1 and 1
+                Math.random() * 2 - 1
+            ).normalize(); // Normalize to ensure consistent speed
+
+            // Boundaries
+            model.boundaries = {
+                xMin: -window.innerWidth / 2,
+                xMax: window.innerWidth / 2,
+                yMin: -window.innerHeight / 2,
+                yMax: window.innerHeight / 2
             };
         }, undefined, (error) => {
             console.error('An error happened:', error);
@@ -49,7 +64,7 @@
         light2.position.set(-10, -10, -10);
         scene.add(light2);
 
-        const ambientLight = new THREE.AmbientLight(0x404040); // Soft white light
+        const ambientLight = new THREE.AmbientLight(0x404040);
         scene.add(ambientLight);
 
         // Camera position
@@ -64,7 +79,19 @@
                 model.rotation.y += model.rotationSpeeds.y;
                 model.rotation.z += model.rotationSpeeds.z;
 
-                // Ensure model stays within the view
+                // Move model
+                model.position.x += model.movementSpeed * model.movementDirection.x;
+                model.position.y += model.movementSpeed * model.movementDirection.y;
+
+                // Bounce off walls
+                if (model.position.x <= model.boundaries.xMin || model.position.x >= model.boundaries.xMax) {
+                    model.movementDirection.x *= -1; // Reverse x direction
+                }
+                if (model.position.y <= model.boundaries.yMin || model.position.y >= model.boundaries.yMax) {
+                    model.movementDirection.y *= -1; // Reverse y direction
+                }
+
+                // Update camera position based on model
                 camera.position.z = Math.max(5, Math.abs(model.position.z) + 5);
             }
 
@@ -78,6 +105,15 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
             camera.aspect = window.innerWidth / window.innerHeight;
             camera.updateProjectionMatrix();
+            // Update boundaries
+            if (model) {
+                model.boundaries = {
+                    xMin: -window.innerWidth / 2,
+                    xMax: window.innerWidth / 2,
+                    yMin: -window.innerHeight / 2,
+                    yMax: window.innerHeight / 2
+                };
+            }
         });
     </script>
 </body>
