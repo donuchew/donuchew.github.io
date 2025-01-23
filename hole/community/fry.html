@@ -131,7 +131,7 @@
         loader.load('../../img/testgingerman.glb', function(gltf) {
             model = gltf.scene;
             model.position.set(Math.random() * 10 - 5, Math.random() * 10 - 5, 0);
-            model.scale.set(0.1, 0.1, 0.1); // 모델 크기 조정
+            model.scale.set(10, 10, 10); // 모델 크기 조정
             scene.add(model);
         }, undefined, function(error) {
             console.error('An error occurred while loading the GLB file:', error);
