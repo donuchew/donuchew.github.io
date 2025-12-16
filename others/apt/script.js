@@ -467,14 +467,24 @@ function nextDay() {
                             } else if (currentScore > 50) {
                                 const chemBonus = (chemistryScore - 3) * 0.05;
                                 const successChance = 0.4 + (currentScore/200) + chemBonus;
-                                if (Math.random() < successChance) {
+                                //다자연애자
+                                const actorHasLover = Object.values(actor.specialRelations || {}).includes("lover");
+                                const allowMultiple = actor.tags?.includes("다자연애자");
+                                if (actorHasLover && !allowMultiple) {
+                                    logText = `[고백 포기] ${actor.name}}${getJosa(actor.name, '은/는')} ${target.name}에게 관심이 있지만 이미 연인이 있어 마음을 접었다...`; 
+                                }
+                                else{
+                                    if (Math.random() < successChance) {
                                     setSpecialStatus(actor.id, target.id, 'lover'); setSpecialStatus(target.id, actor.id, 'lover');
                                     updateRelationship(actor.id, target.id, 15); updateRelationship(target.id, actor.id, 15);
                                     logText = `[고백 성공] ${actor.name}${getJosa(actor.name, '은/는')} ${target.name}에게 고백했고, 연인이 되었다! 💖`;
-                                } else {
-                                    updateRelationship(actor.id, target.id, -5); updateRelationship(target.id, actor.id, -2);
-                                    logText = `[고백 실패] ${actor.name}${getJosa(actor.name, '은/는')} ${target.name}에게 차였다...`;
+                                    } else {
+                                        updateRelationship(actor.id, target.id, -5); updateRelationship(target.id, actor.id, -2);
+                                        logText = `[고백 실패] ${actor.name}${getJosa(actor.name, '은/는')} ${target.name}에게 차였다...`;
+                                    }
                                 }
+                                
+                                
                             } else {
                                 logText = `[고백 포기] ${actor.name}${getJosa(actor.name, '은/는')} ${target.name}에게 고백하려다 참았다.`;
                             }
@@ -608,6 +618,10 @@ function addCharacter() {
     const name = nameInput.value.trim();
     const birth = birthInput.value; // YYYY-MM-DD
     const [y,m,d] = birth.split('-').map(Number);
+
+    //태그특성들 추가 
+    const tagChecks = document.querySelectorAll('.tag-check');
+    const tags = [...tagChecks].filter(c => c.checked).map(c => c.value);
     
     
     if (!name) return alert("이름을 입력해주세요.");
@@ -633,7 +647,7 @@ function addCharacter() {
         currentAction: '-', 
         relationships: {}, 
         specialRelations: {},
-        tags: [] // 특성들 추가용 
+        tags: tags // 특성들 추가용 
     });
     nameInput.value = '';
     birthInput.value = '';
@@ -1074,4 +1088,5 @@ function downloadMapImage() {
     link.click();
 
 }
+
 
