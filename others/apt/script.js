@@ -121,6 +121,7 @@ function fillTemplate(text) {
     return replaced;
 }
 
+// 관계함수 
 function calculateChemistry(mbti1, mbti2) {
     if (!compatibilityData[mbti1] || !compatibilityData[mbti1][mbti2]) return 3;
     return compatibilityData[mbti1][mbti2];
@@ -141,6 +142,37 @@ function getRelationshipLabel(score, specialStatus) {
     if (score < 80) return "신뢰";
     return "소울메이트"; 
 }
+
+//벌자리게산 owoo 251216
+function getZodiac(month, day) {
+    const zodiac = [
+        ["capricorn", 1, 19],
+        ["aquarius", 1, 20],
+        ["pisces", 2, 19],
+        ["aries", 3, 21],
+        ["taurus", 4, 20],
+        ["gemini", 5, 21],
+        ["cancer", 6, 22],
+        ["leo", 7, 23],
+        ["virgo", 8, 23],
+        ["libra", 9, 23],
+        ["scorpio", 10, 23],
+        ["sagittarius", 11, 22],
+        ["capricorn", 12, 22]
+    ];
+    for (const [sign, m, d] of zodiac) {
+        if (month === m && day >= d) return sign;
+        if (month === m + 1 && day < d) return sign;
+    }
+}
+
+//띠 게산 owoo 251216
+function getChineseZodiac(year) {
+    const animals = ["원숭이","닭","개","돼지","쥐","소","호랑이","토끼","용","뱀","말","양"];
+    return animals[year % 12];
+}
+
+
 
 function getHeartHTML(score, specialStatus) {
     if (specialStatus === 'lover') {
@@ -520,6 +552,8 @@ function addCharacter() {
     const mbtiInput = document.getElementById('input-mbti');
     const roomInput = document.getElementById('input-room');
     const isMinorInput = document.getElementById('input-minor');
+    const birth = birthInput.value; // YYYY-MM-DD
+    const [y,m,d] = birth.split('-').map(Number);
 
     const name = nameInput.value.trim();
     if (!name) return alert("이름을 입력해주세요.");
@@ -539,7 +573,10 @@ function addCharacter() {
         currentLocation: 'apt', 
         currentAction: '-', 
         relationships: {}, 
-        specialRelations: {}
+        specialRelations: {},
+        birthDate: birth,
+        zodiac: getZodiac(m,d),
+        chineseZodiac: getChineseZodiac(y),
     });
     nameInput.value = '';
     isMinorInput.checked = false;
@@ -977,4 +1014,5 @@ function downloadMapImage() {
     link.download = `relationship_map_${Date.now()}.png`;
     link.href = tempCanvas.toDataURL("image/png");
     link.click();
+
 }
