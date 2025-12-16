@@ -3,7 +3,7 @@
 // ADULT_MODE:
 //  - 'A' : 성인 이벤트 텍스트 전부 플레이스홀더 (__ADULT_SCENE_01__ ...)
 //  - 'B' : 아주 순한/은유적인 연애 이벤트 문장 사용 (노골적 표현 없음)
-const ADULT_MODE = 'A';
+const ADULT_MODE = 'B';
 
 const MBTI_TYPES = [
     "ISTJ", "ISFJ", "INFJ", "INTJ", 
@@ -1283,3 +1283,4 @@ function downloadMapImage() {
     link.href = tempCanvas.toDataURL("image/png");
     link.click();
 }
+
