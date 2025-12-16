@@ -1,3 +1,10 @@
+// ===== 고급 시뮬레이션 + A/B 모드 통합 스크립트 =====
+
+// ADULT_MODE:
+//  - 'A' : 성인 이벤트 텍스트 전부 플레이스홀더 (__ADULT_SCENE_01__ ...)
+//  - 'B' : 아주 순한/은유적인 연애 이벤트 문장 사용 (노골적 표현 없음)
+const ADULT_MODE = 'A';
+
 const MBTI_TYPES = [
     "ISTJ", "ISFJ", "INFJ", "INTJ", 
     "ISTP", "ISFP", "INFP", "INTP", 
@@ -57,8 +64,6 @@ const chineseCompatibility = {
     돼지: { 토끼: 2, 양: 2, 뱀: -2, 원숭이: -1 }
 };
 
-
-
 const PLACES = [
     { id: 'apt', name: '아파트', type: 'home' },
     { id: 'mart', name: '마트', type: 'out' },
@@ -101,6 +106,19 @@ const EVENTS = [
     { type: 'breakup', name: '이별', change: 0, text: '에게 이별을 고했다' },
     { type: 'gift', name: '선물', change: 10, text: '에게 작은 선물을 주었다' }
 ];
+
+// A/B 모드에 따른 성인 이벤트 문장 세트
+const ADULT_EVENT_TEXTS = ADULT_MODE === 'A'
+  ? [
+      "__ADULT_SCENE_01__",
+      "__ADULT_SCENE_02__",
+      "__ADULT_SCENE_SPECIAL__"
+    ]
+  : [
+      "둘만 아는 비밀스러운 시간을 보냈다",
+      "밤이 깊도록 서로에게만 집중하며 이야기를 나눴다",
+      "밖에서는 보여주지 않는 아주 가까운 순간을 조용히 공유했다"
+    ];
 
 let characters = [];
 let day = 1;
@@ -153,28 +171,14 @@ function fillTemplate(text) {
     return replaced;
 }
 
-// 관계함수 
+// 관계 함수
 function calculateChemistry(mbti1, mbti2, zodiac1, zodiac2, animal1, animal2) {
-    //기존 - 엠비티아이만 있음 
-    //if (!compatibilityData[mbti1] || !compatibilityData[mbti1][mbti2]) return 3;
-    //return compatibilityData[mbti1][mbti2];
-
-    //확장 - 엠벼 + 띠 + 조디악 
-    // MBTI 기본값
     let base = compatibilityData[mbti1]?.[mbti2] ?? 3;
-
-    // 별자리 가산점
     const zBonus = zodiacCompatibility[zodiac1]?.[zodiac2] ?? 0;
-
-    // 띠 가산점
     const aBonus = chineseCompatibility[animal1]?.[animal2] ?? 0;
-
     let total = base + zBonus + aBonus;
-
-    // 제한
     if (total > 5) total = 5;
     if (total < -5) total = -5;
-
     return total;
 }
 
@@ -194,7 +198,7 @@ function getRelationshipLabel(score, specialStatus) {
     return "소울메이트"; 
 }
 
-//벌자리게산 owoo 251216
+// 별자리
 function getZodiac(month, day) {
     const zodiac = [
         ["capricorn", 1, 19],
@@ -217,13 +221,11 @@ function getZodiac(month, day) {
     }
 }
 
-//띠 게산 owoo 251216
+// 띠
 function getChineseZodiac(year) {
     const animals = ["원숭이","닭","개","돼지","쥐","소","호랑이","토끼","용","뱀","말","양"];
     return animals[year % 12];
 }
-
-
 
 function getHeartHTML(score, specialStatus) {
     if (specialStatus === 'lover') {
@@ -298,6 +300,45 @@ function getProbabilisticChange(score) {
     }
 }
 
+// 성인 이벤트 시도 (조건: 둘 다 성인, 아파트, 일정 호감 이상 등)
+function tryAdultEvent(actor, target, locId, dailyLogs) {
+    if (locId !== 'apt') return;
+    if (actor.isMinor || target.isMinor) return;
+
+    const baseRel = actor.relationships[target.id] || 0;
+    const special = actor.specialRelations?.[target.id];
+    const hasPervert =
+        (actor.tags && actor.tags.includes('변태성욕자')) ||
+        (target.tags && target.tags.includes('변태성욕자'));
+
+    // 연인이면 기본 허용, 연인이 아니면 호감도 70 이상 정도
+    if (!special && baseRel < 70) return;
+
+    let chance = special ? 0.25 : 0.1;
+    if (hasPervert) chance += 0.15;
+
+    if (Math.random() >= chance) return;
+
+    const template = getRandom(ADULT_EVENT_TEXTS);
+    const text = fillTemplate(template);
+
+    updateRelationship(actor.id, target.id, 3);
+    updateRelationship(target.id, actor.id, 3);
+
+    actor.currentAction = "은밀한 시간";
+    target.currentAction = "은밀한 시간";
+
+    dailyLogs.push({
+        text: `[비공개 이벤트] ${actor.name}${getJosa(actor.name, '와/과')} ${target.name}${getJosa(target.name, '은/는')} ${text}.`,
+        type: 'event'
+    });
+}
+
+// 태그 기반: 관종/사이코패스 등 확률 가중에 사용할 헬퍼
+function hasTag(char, tag) {
+    return char.tags && char.tags.includes(tag);
+}
+
 function nextDay() {
     if (characters.length === 0) {
         alert("최소 1명의 캐릭터가 필요합니다.");
@@ -310,8 +351,11 @@ function nextDay() {
 
     characters.forEach(char => {
         const isExtrovert = char.mbti[0] === 'E';
-        const chanceToGoOut = isExtrovert ? 0.6 : 0.3;
-        
+        let chanceToGoOut = isExtrovert ? 0.6 : 0.3;
+
+        // 관종 태그: 밖에 나갈 확률 추가 가중
+        if (hasTag(char, '관종')) chanceToGoOut += 0.15;
+
         if (Math.random() < chanceToGoOut) {
             const places = PLACES.filter(p => p.type === 'out');
             char.currentLocation = getRandom(places).id;
@@ -431,9 +475,19 @@ function nextDay() {
             } else if (group.length === 2) {
                 const target = group[1];
                 
-                if (Math.random() < 0.15 && !isTravel) {
+                // 기본 이벤트 확률 + 태그 기반 가중
+                let eventChance = 0.15;
+                if (hasTag(actor, '사이코패스')) eventChance += 0.15;
+                if (hasTag(target, '사이코패스')) eventChance += 0.1;
+                if (hasTag(actor, '관종')) eventChance += 0.05;
+
+                if (Math.random() < eventChance && !isTravel) {
                     const evt = getRandom(EVENTS);
-                    const chemistryScore = calculateChemistry(actor.mbti, target.mbti, actor.zodiac, target.zodiac,    actor.chineseZodiac, target.chineseZodiac);
+                    const chemistryScore = calculateChemistry(
+                        actor.mbti, target.mbti,
+                        actor.zodiac, target.zodiac,
+                        actor.chineseZodiac, target.chineseZodiac
+                    );
                     const currentScore = actor.relationships[target.id] || 0;
                     const isLovers = actor.specialRelations?.[target.id] === 'lover';
                     let logText = "";
@@ -443,60 +497,71 @@ function nextDay() {
                         const targetHates = target.relationships[actor.id] < 0;
                         
                         if (actorHates || targetHates) {
-                             updateRelationship(actor.id, target.id, 15); updateRelationship(target.id, actor.id, 15);
-                             logText = `[${evt.name}] ${actor.name}${getJosa(actor.name, '와/과')} ${target.name}${getJosa(target.name, '은/는')} 서로 사과하고 화해했다.`;
-                             actor.currentAction = evt.name; target.currentAction = `${evt.name}`;
-                             dailyLogs.push({ text: logText, type: 'event' });
+                            updateRelationship(actor.id, target.id, 15); 
+                            updateRelationship(target.id, actor.id, 15);
+                            logText = `[${evt.name}] ${actor.name}${getJosa(actor.name, '와/과')} ${target.name}${getJosa(target.name, '은/는')} 서로 사과하고 화해했다.`;
+                            actor.currentAction = evt.name; 
+                            target.currentAction = `${evt.name}`;
+                            dailyLogs.push({ text: logText, type: 'event' });
                         } else {
-                             updateRelationship(actor.id, target.id, 5); updateRelationship(target.id, actor.id, 5);
-                             logText = `${actor.name}${getJosa(actor.name, '와/과')} ${target.name}${getJosa(target.name, '은/는')} 사이좋게 대화를 나눴다.`;
-                             actor.currentAction = "대화"; target.currentAction = "대화";
-                             dailyLogs.push({ text: logText, type: 'social' });
+                            updateRelationship(actor.id, target.id, 5); 
+                            updateRelationship(target.id, actor.id, 5);
+                            logText = `${actor.name}${getJosa(actor.name, '와/과')} ${target.name}${getJosa(target.name, '은/는')} 사이좋게 대화를 나눴다.`;
+                            actor.currentAction = "대화"; 
+                            target.currentAction = "대화";
+                            dailyLogs.push({ text: logText, type: 'social' });
                         }
                     } 
                     else if (evt.type === 'confess') {
                         if (actor.isMinor !== target.isMinor) {
-                            updateRelationship(actor.id, target.id, 2); updateRelationship(target.id, actor.id, 2);
+                            updateRelationship(actor.id, target.id, 2); 
+                            updateRelationship(target.id, actor.id, 2);
                             logText = `${actor.name}${getJosa(actor.name, '은/는')} ${target.name}에게 호감이 있지만, 나이 차이를 의식해 마음을 접었다.`;
-                            actor.currentAction = "대화"; target.currentAction = "대화";
+                            actor.currentAction = "대화"; 
+                            target.currentAction = "대화";
                             dailyLogs.push({ text: logText, type: 'social' });
                         } else {
                             if (isLovers) {
-                                updateRelationship(actor.id, target.id, 5); updateRelationship(target.id, actor.id, 5);
+                                updateRelationship(actor.id, target.id, 5); 
+                                updateRelationship(target.id, actor.id, 5);
                                 logText = `[사랑] ${actor.name}${getJosa(actor.name, '은/는')} ${target.name}에게 다시 사랑을 맹세했다.`;
                             } else if (currentScore > 50) {
                                 const chemBonus = (chemistryScore - 3) * 0.05;
                                 const successChance = 0.4 + (currentScore/200) + chemBonus;
-                                //다자연애자
+
                                 const actorHasLover = Object.values(actor.specialRelations || {}).includes("lover");
-                                const allowMultiple = actor.tags?.includes("다자연애자");
+                                const allowMultiple = hasTag(actor, "다자연애자");
+
                                 if (actorHasLover && !allowMultiple) {
-                                    logText = `[고백 포기] ${actor.name}}${getJosa(actor.name, '은/는')} ${target.name}에게 관심이 있지만 이미 연인이 있어 마음을 접었다...`; 
-                                }
-                                else{
+                                    logText = `[고백 포기] ${actor.name}${getJosa(actor.name, '은/는')} ${target.name}에게 관심이 있지만 이미 연인이 있어 마음을 접었다...`; 
+                                } else {
                                     if (Math.random() < successChance) {
-                                    setSpecialStatus(actor.id, target.id, 'lover'); setSpecialStatus(target.id, actor.id, 'lover');
-                                    updateRelationship(actor.id, target.id, 15); updateRelationship(target.id, actor.id, 15);
-                                    logText = `[고백 성공] ${actor.name}${getJosa(actor.name, '은/는')} ${target.name}에게 고백했고, 연인이 되었다! 💖`;
+                                        setSpecialStatus(actor.id, target.id, 'lover'); 
+                                        setSpecialStatus(target.id, actor.id, 'lover');
+                                        updateRelationship(actor.id, target.id, 15); 
+                                        updateRelationship(target.id, actor.id, 15);
+                                        logText = `[고백 성공] ${actor.name}${getJosa(actor.name, '은/는')} ${target.name}에게 고백했고, 연인이 되었다! 💖`;
                                     } else {
-                                        updateRelationship(actor.id, target.id, -5); updateRelationship(target.id, actor.id, -2);
+                                        updateRelationship(actor.id, target.id, -5); 
+                                        updateRelationship(target.id, actor.id, -2);
                                         logText = `[고백 실패] ${actor.name}${getJosa(actor.name, '은/는')} ${target.name}에게 차였다...`;
                                     }
                                 }
-                                
-                                
                             } else {
                                 logText = `[고백 포기] ${actor.name}${getJosa(actor.name, '은/는')} ${target.name}에게 고백하려다 참았다.`;
                             }
-                            actor.currentAction = evt.name; target.currentAction = `(대상) ${evt.name}`;
+                            actor.currentAction = evt.name; 
+                            target.currentAction = `(대상) ${evt.name}`;
                             dailyLogs.push({ text: logText, type: 'event' });
                         }
                     } 
                     else if (evt.type === 'breakup') {
                         if (isLovers) {
                             if (Math.random() < 0.3 - (currentScore/200)) {
-                                setSpecialStatus(actor.id, target.id, null); setSpecialStatus(target.id, actor.id, null);
-                                updateRelationship(actor.id, target.id, -25); updateRelationship(target.id, actor.id, -25);
+                                setSpecialStatus(actor.id, target.id, null); 
+                                setSpecialStatus(target.id, actor.id, null);
+                                updateRelationship(actor.id, target.id, -25); 
+                                updateRelationship(target.id, actor.id, -25);
                                 logText = `[이별] ${actor.name}${getJosa(actor.name, '와/과')} ${target.name}${getJosa(target.name, '은/는')} 헤어졌다. 💔`;
                             } else {
                                 updateRelationship(actor.id, target.id, 2);
@@ -506,20 +571,25 @@ function nextDay() {
                             updateRelationship(actor.id, target.id, -5);
                             logText = `${actor.name}${getJosa(actor.name, '은/는')} ${target.name}${getJosa(target.name, '와/과')} 거리를 두기로 했다.`;
                         }
-                        actor.currentAction = evt.name; target.currentAction = `${evt.name}`;
+                        actor.currentAction = evt.name; 
+                        target.currentAction = `${evt.name}`;
                         dailyLogs.push({ text: logText, type: 'event' });
                         
                     }
                     else if (evt.type === 'cut') {
                         if (isLovers) {
-                            updateRelationship(actor.id, target.id, -30); updateRelationship(target.id, actor.id, -30);
+                            updateRelationship(actor.id, target.id, -30); 
+                            updateRelationship(target.id, actor.id, -30);
                             logText = `[권태] ${actor.name}${getJosa(actor.name, '와/과')} ${target.name}의 사이가 소원해졌다.`;
-                            actor.currentAction = "권태"; target.currentAction = "권태";
+                            actor.currentAction = "권태"; 
+                            target.currentAction = "권태";
                             dailyLogs.push({ text: logText, type: 'event' });
                         } else {
-                            updateRelationship(actor.id, target.id, -30); updateRelationship(target.id, actor.id, -30);
+                            updateRelationship(actor.id, target.id, -30); 
+                            updateRelationship(target.id, actor.id, -30);
                             logText = `[절교] ${actor.name}${getJosa(actor.name, '와/과')} ${target.name}의 사이가 멀어졌다.`;
-                            actor.currentAction = "절교"; target.currentAction = "절교";
+                            actor.currentAction = "절교"; 
+                            target.currentAction = "절교";
                             dailyLogs.push({ text: logText, type: 'event' });
                         }
                     } 
@@ -529,9 +599,13 @@ function nextDay() {
                         updateRelationship(actor.id, target.id, c1);
                         updateRelationship(target.id, actor.id, c2);
                         logText = `[${evt.name}] ${actor.name}${getJosa(actor.name, '은/는')} ${target.name}${evt.text}.`;
-                        actor.currentAction = evt.name; target.currentAction = `${evt.name}`;
+                        actor.currentAction = evt.name; 
+                        target.currentAction = `${evt.name}`;
                         dailyLogs.push({ text: logText, type: 'event' });
                     }
+
+                    // 질투심강함 태그: 연인/호감 대상에게 집착적 반응 강화 등은
+                    // 필요하면 여기서 추가 조정하면 됨.
                 } 
                 else {
                     let action = null;
@@ -549,7 +623,11 @@ function nextDay() {
                     }
 
                     const processedText = fillTemplate(getRandom(action.text));
-                    const chemistryScore = calculateChemistry(actor.mbti, target.mbti, actor.zodiac, target.zodiac,    actor.chineseZodiac, target.chineseZodiac);
+                    const chemistryScore = calculateChemistry(
+                        actor.mbti, target.mbti,
+                        actor.zodiac, target.zodiac,
+                        actor.chineseZodiac, target.chineseZodiac
+                    );
                     
                     updateRelationship(actor.id, target.id, getProbabilisticChange(chemistryScore));
                     updateRelationship(target.id, actor.id, getProbabilisticChange(chemistryScore));
@@ -557,7 +635,13 @@ function nextDay() {
                     actor.currentAction = action.name;
                     target.currentAction = `함께 ${action.name}`;
 
-                    dailyLogs.push({ text: `${actor.name}${getJosa(actor.name, '와/과')} ${target.name}${getJosa(target.name, '은/는')} ${isTravel ? '여행을 떠나' : getLocationName(locId)+'에서'} ${processedText}.`, type: isTravel ? 'event' : 'social' });
+                    dailyLogs.push({ 
+                        text: `${actor.name}${getJosa(actor.name, '와/과')} ${target.name}${getJosa(target.name, '은/는')} ${isTravel ? '여행을 떠나' : getLocationName(locId)+'에서'} ${processedText}.`, 
+                        type: isTravel ? 'event' : 'social' 
+                    });
+
+                    // 조건 만족 시 비공개(성인) 이벤트 추가 시도
+                    tryAdultEvent(actor, target, locId, dailyLogs);
                 }
 
             } else {
@@ -582,7 +666,11 @@ function nextDay() {
                     group[i].currentAction = isTravel ? action.name : `함께 ${action.name}`;
                     for(let j=0; j<group.length; j++) {
                         if(i === j) continue;
-                        const chem = calculateChemistry(group[i].mbti, group[j].mbti,  group[i].zodiac,  group[j].zodiac,    group[i].chineseZodiac,  group[j].chineseZodiac);
+                        const chem = calculateChemistry(
+                            group[i].mbti, group[j].mbti,
+                            group[i].zodiac, group[j].zodiac,
+                            group[i].chineseZodiac, group[j].chineseZodiac
+                        );
                         updateRelationship(group[i].id, group[j].id, getProbabilisticChange(chem));
                     }
                 }
@@ -613,21 +701,21 @@ function addCharacter() {
     const mbtiInput = document.getElementById('input-mbti');
     const roomInput = document.getElementById('input-room');
     const isMinorInput = document.getElementById('input-minor');
-    const birthInput = document.getElementById('input-birth')
+    const birthInput = document.getElementById('input-birth');
 
     const name = nameInput.value.trim();
     const birth = birthInput.value; // YYYY-MM-DD
-    const [y,m,d] = birth.split('-').map(Number);
 
-    //태그특성들 추가 
     const tagChecks = document.querySelectorAll('.tag-check');
     const tags = [...tagChecks].filter(c => c.checked).map(c => c.value);
-    
     
     if (!name) return alert("이름을 입력해주세요.");
     if (!birth) return alert("생년월일을 입력해주세요.");
     
     if (characters.some(c => c.name === name)) return alert("이미 존재하는 이름입니다.");
+
+    const [y,m,d] = birth.split('-').map(Number);
+
     let room = roomInput.value;
     if (room === 'auto') {
         room = findEmptyRoom();
@@ -647,12 +735,14 @@ function addCharacter() {
         currentAction: '-', 
         relationships: {}, 
         specialRelations: {},
-        tags: tags // 특성들 추가용 
+        tags: tags
     });
     nameInput.value = '';
     birthInput.value = '';
     isMinorInput.checked = false;
-    renderCharacterList(); renderLocations(); updateUI();
+    renderCharacterList(); 
+    renderLocations(); 
+    updateUI();
 }
 
 function removeCharacter(id) {
@@ -662,7 +752,9 @@ function removeCharacter(id) {
         delete c.relationships[id];
         if(c.specialRelations) delete c.specialRelations[id];
     });
-    renderCharacterList(); renderLocations(); updateUI();
+    renderCharacterList(); 
+    renderLocations(); 
+    updateUI();
 }
 
 function findEmptyRoom() {
@@ -673,23 +765,40 @@ function findEmptyRoom() {
     return counts[sorted[0]] >= 4 ? null : sorted[0];
 }
 
-function getRoomCount(roomNum) { return characters.filter(c => c.room === roomNum).length; }
+function getRoomCount(roomNum) { 
+    return characters.filter(c => c.room === roomNum).length; 
+}
 
 function initMbtiSelect() {
     const sel = document.getElementById('input-mbti');
-    MBTI_TYPES.forEach(t => { const opt = document.createElement('option'); opt.value = t; opt.text = t; sel.appendChild(opt); });
+    MBTI_TYPES.forEach(t => { 
+        const opt = document.createElement('option'); 
+        opt.value = t; 
+        opt.text = t; 
+        sel.appendChild(opt); 
+    });
 }
 function initRoomSelect() {
     const sel = document.getElementById('input-room');
-    for (let f=1; f<=5; f++) for (let r=1; r<=6; r++) { const opt = document.createElement('option'); opt.value = `${f}0${r}`; opt.text = `${f}0${r}호`; sel.appendChild(opt); }
+    for (let f=1; f<=5; f++) for (let r=1; r<=6; r++) { 
+        const opt = document.createElement('option'); 
+        opt.value = `${f}0${r}`; 
+        opt.text = `${f}0${r}호`; 
+        sel.appendChild(opt); 
+    }
 }
 
 function renderCharacterList() {
     const container = document.getElementById('character-list');
     const emptyState = document.getElementById('empty-state');
     container.innerHTML = '';
-    if (characters.length === 0) { container.classList.add('hidden'); emptyState.classList.remove('hidden'); return; }
-    container.classList.remove('hidden'); emptyState.classList.add('hidden');
+    if (characters.length === 0) { 
+        container.classList.add('hidden'); 
+        emptyState.classList.remove('hidden'); 
+        return; 
+    }
+    container.classList.remove('hidden'); 
+    emptyState.classList.add('hidden');
 
     characters.forEach(char => {
         const div = document.createElement('div');
@@ -698,6 +807,10 @@ function renderCharacterList() {
             ? `<span class="text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full ml-1" title="미성년자">🌱</span>` 
             : `<span class="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded-full ml-1 hidden" title="성인">adult</span>`;
 
+        const tagLine = (char.tags && char.tags.length > 0)
+            ? `<div class="mt-1 text-[10px] text-slate-400">${char.tags.join(' / ')}</div>`
+            : '';
+
         if (affectionMode) {
             div.onclick = () => showAffectionModal(char.id);
             div.innerHTML = `
@@ -705,7 +818,8 @@ function renderCharacterList() {
                     <h3 class="font-bold text-lg dark:text-white">${char.name}${badge}</h3>
                     <span class="text-xs bg-brand-100 dark:bg-brand-900 text-brand-600 dark:text-brand-300 px-2 py-1 rounded-full">${char.mbti}</span>
                 </div>
-                <div class="text-sm text-slate-500 dark:text-slate-400 mb-2"><i class="fa-solid fa-door-closed mr-1"></i> ${char.room}호</div>
+                <div class="text-sm text-slate-500 dark:text-slate-400 mb-1"><i class="fa-solid fa-door-closed mr-1"></i> ${char.room}호</div>
+                ${tagLine}
                 <div class="text-center mt-2 p-2 bg-brand-50 dark:bg-slate-800 rounded-lg text-brand-600 dark:text-brand-400 text-sm font-medium">클릭하여 관계 보기</div>
             `;
         } else {
@@ -716,6 +830,7 @@ function renderCharacterList() {
                     <div>
                         <h3 class="font-bold text-slate-900 dark:text-white leading-tight">${char.name}${badge}</h3>
                         <div class="text-xs text-slate-500 dark:text-slate-400">${char.mbti} · ${char.room}호</div>
+                        ${tagLine}
                     </div>
                 </div>
             `;
@@ -856,10 +971,19 @@ function renderLogs(newLogs) {
     });
     container.insertBefore(dayDiv, container.firstChild);
 }
-function clearLogs() { document.getElementById('log-container').innerHTML = `<div class="text-center text-slate-400 italic py-10">로그가 초기화되었습니다.</div>`; logs = []; }
+function clearLogs() { 
+    document.getElementById('log-container').innerHTML = `<div class="text-center text-slate-400 italic py-10">로그가 초기화되었습니다.</div>`; 
+    logs = []; 
+}
 
-function toggleExportMenu(event) { event.stopPropagation(); document.getElementById('export-menu').classList.toggle('hidden'); }
-function closeMenus(event) { const menu = document.getElementById('export-menu'); if (!menu.classList.contains('hidden')) menu.classList.add('hidden'); }
+function toggleExportMenu(event) { 
+    event.stopPropagation(); 
+    document.getElementById('export-menu').classList.toggle('hidden'); 
+}
+function closeMenus(event) { 
+    const menu = document.getElementById('export-menu'); 
+    if (!menu.classList.contains('hidden')) menu.classList.add('hidden'); 
+}
 function toggleAffectionMode() {
     affectionMode = !affectionMode;
     const btn = document.getElementById('btn-affection-mode');
@@ -874,31 +998,71 @@ function showAffectionModal(charId) {
     content.innerHTML = '';
     const list = document.createElement('div');
     list.className = "divide-y divide-slate-100 dark:divide-slate-700";
-    const rels = Object.entries(char.relationships).map(([id, score]) => ({ id, score, name: characters.find(c=>c.id===id)?.name, specialStatus: char.specialRelations?.[id] })).filter(x => x.name).sort((a,b) => b.score - a.score);
+    const rels = Object.entries(char.relationships)
+        .map(([id, score]) => ({
+            id, 
+            score, 
+            name: characters.find(c=>c.id===id)?.name, 
+            specialStatus: char.specialRelations?.[id]
+        }))
+        .filter(x => x.name)
+        .sort((a,b) => b.score - a.score);
     if (rels.length === 0) content.innerHTML = '<div class="p-8 text-center text-slate-400">아직 관계가 형성되지 않았습니다.</div>';
     else {
         rels.forEach(rel => {
             const row = document.createElement('div');
             row.className = "p-4 flex items-center justify-between hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors";
-            row.innerHTML = `<div class="flex items-center gap-3"><span class="font-medium dark:text-slate-200">${rel.name}</span><span class="text-xs px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-600 text-slate-600 dark:text-slate-300">${getRelationshipLabel(rel.score, rel.specialStatus)}</span></div><div class="flex flex-col items-end"><div class="text-sm gap-1 flex">${getHeartHTML(rel.score, rel.specialStatus)}</div><span class="text-xs text-slate-400 font-mono mt-1">${rel.score}</span></div>`;
+            row.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <span class="font-medium dark:text-slate-200">${rel.name}</span>
+                    <span class="text-xs px-2 py-0.5 rounded bg-slate-100 dark:bg-slate-600 text-slate-600 dark:text-slate-300">
+                        ${getRelationshipLabel(rel.score, rel.specialStatus)}
+                    </span>
+                </div>
+                <div class="flex flex-col items-end">
+                    <div class="text-sm gap-1 flex">${getHeartHTML(rel.score, rel.specialStatus)}</div>
+                    <span class="text-xs text-slate-400 font-mono mt-1">${rel.score}</span>
+                </div>`;
             list.appendChild(row);
         });
         content.appendChild(list);
     }
     document.getElementById('affection-modal').classList.remove('hidden');
 }
-function closeModal() { document.getElementById('affection-modal').classList.add('hidden'); }
+function closeModal() { 
+    document.getElementById('affection-modal').classList.add('hidden'); 
+}
 
 function exportData(includeRelationships) {
     if (characters.length === 0) return alert("저장할 데이터가 없습니다.");
     const exportData = characters.map(c => {
-        const base = { name: c.name, mbti: c.mbti, room: c.room, isMinor: c.isMinor };
+        const base = { 
+            name: c.name, 
+            mbti: c.mbti, 
+            room: c.room, 
+            isMinor: c.isMinor,
+            birthDate: c.birthDate || null,
+            zodiac: c.zodiac || null,
+            chineseZodiac: c.chineseZodiac || null,
+            tags: c.tags || []
+        };
         if (includeRelationships) {
-            base.id = c.id; base.relationships = c.relationships; base.specialRelations = c.specialRelations; base.currentLocation = c.currentLocation; base.currentAction = c.currentAction;
+            base.id = c.id; 
+            base.relationships = c.relationships; 
+            base.specialRelations = c.specialRelations; 
+            base.currentLocation = c.currentLocation; 
+            base.currentAction = c.currentAction;
         }
         return base;
     });
-    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify({ version: 1.6, type: includeRelationships ? 'full' : 'basic', day: includeRelationships ? day : 1, data: exportData }));
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(
+        JSON.stringify({
+            version: 1.7,
+            type: includeRelationships ? 'full' : 'basic',
+            day: includeRelationships ? day : 1,
+            data: exportData
+        })
+    );
     const downloadAnchorNode = document.createElement('a');
     downloadAnchorNode.setAttribute("href", dataStr);
     downloadAnchorNode.setAttribute("download", `housing_simul_${includeRelationships ? 'full' : 'basic'}_${Date.now()}.json`);
@@ -917,30 +1081,56 @@ function importData(input) {
             if (!json.data || !Array.isArray(json.data)) throw new Error("잘못된 파일 형식");
             if (confirm("현재 명단이 덮어씌워집니다. 진행하시겠습니까?")) {
                 day = json.day || 1;
-                characters = json.data.map(d => ({
-                    id: d.id || Date.now().toString() + Math.random().toString(36).substring(2, 7),
-                    name: d.name, 
-                    mbti: d.mbti, 
-                    room: d.room,
-                    isMinor: d.isMinor || false,
-                    currentLocation: d.currentLocation || 'apt', 
-                    currentAction: d.currentAction || '-',
-                    relationships: d.relationships || {}, 
-                    specialRelations: d.specialRelations || {}
-                }));
-                renderCharacterList(); renderLocations(); renderStatusTable(); clearLogs();
+                characters = json.data.map(d => {
+                    const birth = d.birthDate || "";
+                    let zodiac = d.zodiac || null;
+                    let cz = d.chineseZodiac || null;
+                    if (birth && (!zodiac || !cz)) {
+                        const parts = birth.split('-').map(Number);
+                        if (parts.length === 3) {
+                            const [y,m,day] = parts;
+                            zodiac = getZodiac(m,day);
+                            cz = getChineseZodiac(y);
+                        }
+                    }
+                    return {
+                        id: d.id || Date.now().toString() + Math.random().toString(36).substring(2, 7),
+                        name: d.name, 
+                        mbti: d.mbti, 
+                        room: d.room,
+                        isMinor: d.isMinor || false,
+                        birthDate: birth || null,
+                        zodiac: zodiac,
+                        chineseZodiac: cz,
+                        currentLocation: d.currentLocation || 'apt', 
+                        currentAction: d.currentAction || '-',
+                        relationships: d.relationships || {}, 
+                        specialRelations: d.specialRelations || {},
+                        tags: d.tags || []
+                    };
+                });
+                renderCharacterList(); 
+                renderLocations(); 
+                renderStatusTable(); 
+                clearLogs();
                 document.getElementById('total-count').textContent = characters.length;
                 alert("성공적으로 불러왔습니다.");
             }
-        } catch (err) { alert("파일 불러오기 실패: " + err.message); }
+        } catch (err) { 
+            alert("파일 불러오기 실패: " + err.message); 
+        }
     };
-    reader.readAsText(file); input.value = '';
+    reader.readAsText(file); 
+    input.value = '';
 }
 
 function resetAll() {
     if(confirm("모든 데이터를 초기화하시겠습니까?")) {
         characters = []; day = 1; logs = [];
-        renderCharacterList(); renderLocations(); renderStatusTable(); clearLogs();
+        renderCharacterList(); 
+        renderLocations(); 
+        renderStatusTable(); 
+        clearLogs();
         document.getElementById('total-count').textContent = 0;
     }
 }
@@ -961,12 +1151,21 @@ function switchTab(tabId) {
     if (tabId === 'location') renderLocations();
 }
 
-function updateUI() { renderCharacterList(); renderStatusTable(); }
+function updateUI() { 
+    renderCharacterList(); 
+    renderStatusTable(); 
+}
 
 function toggleTheme() {
     isDarkMode = !isDarkMode;
-    if (isDarkMode) { document.documentElement.classList.add('dark'); localStorage.setItem('theme', 'dark'); }
-    else { document.documentElement.classList.remove('dark'); localStorage.setItem('theme', 'light'); }
+    if (isDarkMode) { 
+        document.documentElement.classList.add('dark'); 
+        localStorage.setItem('theme', 'dark'); 
+    }
+    else { 
+        document.documentElement.classList.remove('dark'); 
+        localStorage.setItem('theme', 'light'); 
+    }
 }
 
 function openRelationshipMap() {
@@ -1044,9 +1243,6 @@ function drawRelationshipMap() {
             const midX = (source.x + target.x) / 2;
             const midY = (source.y + target.y) / 2;
             
-            const dx = midX - centerX;
-            const dy = midY - centerY;
-            
             ctx.moveTo(source.x, source.y);
             ctx.quadraticCurveTo(centerX, centerY, target.x, target.y);
             ctx.stroke();
@@ -1086,7 +1282,4 @@ function downloadMapImage() {
     link.download = `relationship_map_${Date.now()}.png`;
     link.href = tempCanvas.toDataURL("image/png");
     link.click();
-
 }
-
-
