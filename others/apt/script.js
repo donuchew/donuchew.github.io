@@ -226,6 +226,30 @@ function getChineseZodiac(year) {
     const animals = ["원숭이","닭","개","돼지","쥐","소","호랑이","토끼","용","뱀","말","양"];
     return animals[year % 12];
 }
+ 
+// 멘헤라 감금 이벤트 문구들
+const MENHERA_IMPRISON_LINES = [
+    `[집착] {{A}}는 {{B}}를 자신의 방에 가두었다.`,
+    `[경계] {{A}}는 {{B}}를 문밖으로 한 발자국도 못 나가게 했다.`,
+    `[독점] {{A}}는 {{B}}가 다른 사람과 어울리는 것이 참을 수 없었다.`,
+    `[불안] {{A}}는 {{B}}가 자신을 떠날까 봐 방에 묶어두기로 했다.`,
+    `[소유] {{A}}는 {{B}}는 자신만 바라봐야 한다고 생각했다.`,
+    `[광기] {{A}}의 눈빛이 흔들렸다. 결국 {{B}}는 방 안에 갇혔다.`,
+    `[혼란] {{A}}는 설명할 수 없는 충동에 휩싸여 {{B}}를 붙잡아 두었다.`,
+    `[탈선] {{A}}는 {{B}}에게 '조금만 같이 있어 달라'며 문을 잠궜다.`,
+    `[집착폭주] {{A}}는 {{B}}를 누구에게도 빼앗기고 싶지 않았다.`,
+    `[위험신호] {{A}}는 {{B}}가 다른 사람과 웃는 것이 견딜 수 없었다.`,
+    `[격리] {{A}}는 {{B}}가 자신만 바라볼 때까지 시간을 벌기로 했다.`,
+    `[정서불안] {{A}}는 {{B}}를 방에 가둬 두지 않으면 불안함을 견딜 수 없었다.`,
+];
+
+//문구치환함수 
+function formatImprisonLine(template, A, B) {
+    return template
+        .replace(/{{A}}/g, `${A}${getJosa(A,'은/는')}`)
+        .replace(/{{B}}/g, `${B}${getJosa(B,'을/를')}`);
+}
+
 
 function getHeartHTML(score, specialStatus) {
     if (specialStatus === 'lover') {
@@ -339,6 +363,130 @@ function hasTag(char, tag) {
     return char.tags && char.tags.includes(tag);
 }
 
+//감금이벤트 
+function checkMenheraImprisonEvent(dailyLogs) {
+    const menheras = characters.filter(c => c.tags?.includes("멘헤라"));
+
+    menheras.forEach(m => {
+        // 이미 누군가를 감금 중이면 skip
+        if (m.isImprisoned) return;
+
+        // 가장 집착하는 대상 찾기
+        let targetId = null;
+        let maxRel = -999;
+
+        characters.forEach(other => {
+            if (other.id === m.id) return;
+            const rel = m.relationships[other.id] || 0;
+            if (rel > maxRel) {
+                maxRel = rel;
+                targetId = other.id;
+            }
+        });
+
+        if (!targetId) return;
+
+        const target = characters.find(c => c.id === targetId);
+        if (!target) return;
+
+        // 감금 조건: 호감도 ≥ 70 또는 lover
+        const isLover = m.specialRelations?.[target.id] === "lover";
+        if (maxRel < 70 && !isLover) return;
+
+        // 타겟이 다른 사람과 가까운 행동을 하는 날 → 발동
+        const suspects = characters.filter(c =>
+            c.id !== m.id &&
+            c.id !== target.id &&
+            c.currentLocation === target.currentLocation
+        );
+
+        if (suspects.length === 0) return;
+
+        // 질투 발동 확률
+        let jealousyChance = 0.35;
+        if (isLover) jealousyChance += 0.25; 
+        if (maxRel >= 100) jealousyChance += 0.25; 
+
+        if (Math.random() > jealousyChance) return;
+
+        // 감금 실행
+        target.isImprisoned = true;
+        target.imprisonedBy = m.id;
+
+        m.currentAction = "감금";
+         target.currentAction = "감금됨";
+
+        // 랜덤 문구 사용
+        const template = getRandom(MENHERA_IMPRISON_LINES);
+        const log = formatImprisonLine(template, m.name, target.name);
+
+        dailyLogs.push({ type: "event", text: log });
+    });
+}
+
+//구출이벤트 
+function processImprisonedCharacters(dailyLogs) {
+    characters.forEach(c => {
+        if (!c.isImprisoned) return;
+
+        const jailer = characters.find(x => x.id === c.imprisonedBy);
+        if (!jailer) {
+            // 감금자 사라진 경우 자동 해방
+            c.isImprisoned = false;
+            c.imprisonedBy = null;
+            dailyLogs.push({
+                type: "event",
+                text: `${c.name}${getJosa(c.name,'은/는')} 감금에서 풀려났다.`
+            });
+            return;
+        }
+
+        // 탈출 확률 (기본 10%)
+        let escapeChance = 0.1;
+
+        // 관계도가 낮을수록 탈출 확률 상승
+        const rel = c.relationships[jailer.id] || 0;
+        if (rel < -50) escapeChance += 0.2;
+
+        // 다른 주민이 구출할 확률
+        const rescuerChance = 0.15;
+
+        // 탈출 성공
+        if (Math.random() < escapeChance) {
+            c.isImprisoned = false;
+            c.imprisonedBy = null;
+            dailyLogs.push({
+                type: "event",
+                text: `[탈출] ${c.name}${getJosa(c.name,'은/는')} ${jailer.name}의 방에서 몰래 빠져나왔다.`
+            });
+            return;
+        }
+
+        // 타인이 구출
+        if (Math.random() < rescuerChance) {
+            const rescuer = getRandom(characters.filter(x => x.id !== jailer.id && x.id !== c.id));
+            if (rescuer) {
+                c.isImprisoned = false;
+                c.imprisonedBy = null;
+
+                dailyLogs.push({
+                    type: "event",
+                    text: `[구출] ${rescuer.name}${getJosa(rescuer.name,'이/가')} ${c.name}${getJosa(c.name,'을/를')} ${jailer.name}에게서 빼내주었다.`
+                });
+            }
+            return;
+        }
+
+        // 실패 → 계속 감금
+        dailyLogs.push({
+            type: "event",
+            text: `${c.name}${getJosa(c.name,'은/는')} 아직 ${jailer.name}에게 갇혀 있다.`
+        });
+    });
+}
+
+
+
 function nextDay() {
     if (characters.length === 0) {
         alert("최소 1명의 캐릭터가 필요합니다.");
@@ -348,6 +496,9 @@ function nextDay() {
     const dailyLogs = [];
     
     characters.forEach(c => c.interactionGroup = null);
+
+    processImprisonedCharacters(dailyLogs);
+    checkMenheraImprisonEvent(dailyLogs);
 
     characters.forEach(char => {
         const isExtrovert = char.mbti[0] === 'E';
@@ -735,6 +886,8 @@ function addCharacter() {
         currentAction: '-', 
         relationships: {}, 
         specialRelations: {},
+        isImprisoned: false,   // 감금 여부
+        imprisonedBy: null,    // 누구에게 감금됐는지
         tags: tags
     });
     nameInput.value = '';
@@ -1283,4 +1436,5 @@ function downloadMapImage() {
     link.href = tempCanvas.toDataURL("image/png");
     link.click();
 }
+
 
