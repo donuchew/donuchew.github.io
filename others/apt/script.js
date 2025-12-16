@@ -27,6 +27,38 @@ const compatibilityData = {
     "ESTJ": { "ISFP": 5, "ISTP": 5, "INTP": 5, "ISFJ": 4, "ESFJ": 4, "ISTJ": 4, "ESTJ": 4, "ESFP": 3, "ESTP": 3, "INFP": 1, "ENFP": 1, "INFJ": 1, "ENFJ": 1, "INTJ": 2, "ENTJ": 2, "ENTP": 2 }
 };
 
+const zodiacCompatibility = {
+    aries:      { leo: 2, sagittarius: 2, libra: 1, cancer: -1, capricorn: -2 },
+    taurus:     { virgo: 2, capricorn: 2, scorpio: -1, leo: -1, aquarius: -2 },
+    gemini:     { libra: 2, aquarius: 2, virgo: -1, pisces: -2, scorpio: -1 },
+    cancer:     { scorpio: 2, pisces: 2, aries: -1, libra: -1, capricorn: -2 },
+    leo:        { aries: 2, sagittarius: 2, taurus: -1, scorpio: -1, aquarius: -2 },
+    virgo:      { taurus: 2, capricorn: 2, gemini: -1, sagittarius: -1, pisces: -2 },
+    libra:      { gemini: 2, aquarius: 2, aries: -1, cancer: -1, capricorn: -2 },
+    scorpio:    { cancer: 2, pisces: 2, leo: -1, aquarius: -1, taurus: -2 },
+    sagittarius:{ aries: 2, leo: 2, virgo: -1, pisces: -1, gemini: -2 },
+    capricorn:  { taurus: 2, virgo: 2, aries: -1, libra: -1, cancer: -2 },
+    aquarius:   { gemini: 2, libra: 2, leo: -1, scorpio: -2, taurus: -1 },
+    pisces:     { cancer: 2, scorpio: 2, virgo: -1, sagittarius: -1, gemini: -2 }
+};
+
+const chineseCompatibility = {
+    쥐:   { 소: 2, 용: 2, 말: -2, 양: -1 },
+    소:   { 쥐: 2, 뱀: 2, 양: -2, 말: -1 },
+    호랑이:{ 돼지: 2, 개: 2, 원숭이: -1, 뱀: -2 },
+    토끼: { 양: 2, 돼지: 2, 닭: -1, 용: -2 },
+    용:   { 원숭이: 2, 쥐: 2, 토끼: -1, 개: -2 },
+    뱀:   { 소: 2, 닭: 2, 호랑이: -2, 돼지: -1 },
+    말:   { 개: 2, 양: 2, 쥐: -2, 소: -1 },
+    양:   { 토끼: 2, 돼지: 2, 소: -2, 쥐: -1 },
+    원숭이:{ 용: 2, 쥐: 2, 호랑이: -1, 돼지: -2 },
+    닭:   { 소: 2, 뱀: 2, 토끼: -1, 개: -2 },
+    개:   { 말: 2, 호랑이: 2, 용: -2, 닭: -1 },
+    돼지: { 토끼: 2, 양: 2, 뱀: -2, 원숭이: -1 }
+};
+
+
+
 const PLACES = [
     { id: 'apt', name: '아파트', type: 'home' },
     { id: 'mart', name: '마트', type: 'out' },
@@ -122,9 +154,28 @@ function fillTemplate(text) {
 }
 
 // 관계함수 
-function calculateChemistry(mbti1, mbti2) {
-    if (!compatibilityData[mbti1] || !compatibilityData[mbti1][mbti2]) return 3;
-    return compatibilityData[mbti1][mbti2];
+function calculateChemistry(mbti1, mbti2, zodiac1, zodiac2, animal1, animal2) {
+    //기존 - 엠비티아이만 있음 
+    //if (!compatibilityData[mbti1] || !compatibilityData[mbti1][mbti2]) return 3;
+    //return compatibilityData[mbti1][mbti2];
+
+    //확장 - 엠벼 + 띠 + 조디악 
+    // MBTI 기본값
+    let base = compatibilityData[mbti1]?.[mbti2] ?? 3;
+
+    // 별자리 가산점
+    const zBonus = zodiacCompatibility[zodiac1]?.[zodiac2] ?? 0;
+
+    // 띠 가산점
+    const aBonus = chineseCompatibility[animal1]?.[animal2] ?? 0;
+
+    let total = base + zBonus + aBonus;
+
+    // 제한
+    if (total > 5) total = 5;
+    if (total < -5) total = -5;
+
+    return total;
 }
 
 function getRelationshipLabel(score, specialStatus) {
@@ -382,7 +433,7 @@ function nextDay() {
                 
                 if (Math.random() < 0.15 && !isTravel) {
                     const evt = getRandom(EVENTS);
-                    const chemistryScore = calculateChemistry(actor.mbti, target.mbti);
+                    const chemistryScore = calculateChemistry(actor.mbti, target.mbti, actor.zodiac, target.zodiac,    actor.chineseZodiac, target.chineseZodiac);
                     const currentScore = actor.relationships[target.id] || 0;
                     const isLovers = actor.specialRelations?.[target.id] === 'lover';
                     let logText = "";
@@ -488,7 +539,7 @@ function nextDay() {
                     }
 
                     const processedText = fillTemplate(getRandom(action.text));
-                    const chemistryScore = calculateChemistry(actor.mbti, target.mbti);
+                    const chemistryScore = calculateChemistry(actor.mbti, target.mbti, actor.zodiac, target.zodiac,    actor.chineseZodiac, target.chineseZodiac);
                     
                     updateRelationship(actor.id, target.id, getProbabilisticChange(chemistryScore));
                     updateRelationship(target.id, actor.id, getProbabilisticChange(chemistryScore));
@@ -521,7 +572,7 @@ function nextDay() {
                     group[i].currentAction = isTravel ? action.name : `함께 ${action.name}`;
                     for(let j=0; j<group.length; j++) {
                         if(i === j) continue;
-                        const chem = calculateChemistry(group[i].mbti, group[j].mbti);
+                        const chem = calculateChemistry(group[i].mbti, group[j].mbti,  group[i].zodiac,  group[j].zodiac,    group[i].chineseZodiac,  group[j].chineseZodiac);
                         updateRelationship(group[i].id, group[j].id, getProbabilisticChange(chem));
                     }
                 }
@@ -552,11 +603,16 @@ function addCharacter() {
     const mbtiInput = document.getElementById('input-mbti');
     const roomInput = document.getElementById('input-room');
     const isMinorInput = document.getElementById('input-minor');
-    const birth = birthInput.value; // YYYY-MM-DD
-    const [y,m,d] = birth.split('-').map(Number);
+    const birthInput = document.getElementById('input-birth')
 
     const name = nameInput.value.trim();
+    const birth = birthInput.value; // YYYY-MM-DD
+    const [y,m,d] = birth.split('-').map(Number);
+    
+    
     if (!name) return alert("이름을 입력해주세요.");
+    if (!birth) return alert("생년월일을 입력해주세요.");
+    
     if (characters.some(c => c.name === name)) return alert("이미 존재하는 이름입니다.");
     let room = roomInput.value;
     if (room === 'auto') {
@@ -569,16 +625,18 @@ function addCharacter() {
         name: name, 
         mbti: mbtiInput.value, 
         room: room,
-        isMinor: isMinorInput.checked,
+        isMinor: isMinorInput.checked, 
+        birthDate: birth,
+        zodiac: getZodiac(m,d),
+        chineseZodiac: getChineseZodiac(y), 
         currentLocation: 'apt', 
         currentAction: '-', 
         relationships: {}, 
         specialRelations: {},
-        birthDate: birth,
-        zodiac: getZodiac(m,d),
-        chineseZodiac: getChineseZodiac(y),
+        tags: [] // 특성들 추가용 
     });
     nameInput.value = '';
+    birthInput.value = '';
     isMinorInput.checked = false;
     renderCharacterList(); renderLocations(); updateUI();
 }
@@ -1016,3 +1074,4 @@ function downloadMapImage() {
     link.click();
 
 }
+
